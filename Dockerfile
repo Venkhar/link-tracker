@@ -1,5 +1,6 @@
 # Stage 1: Build
 FROM node:20-slim AS builder
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -13,6 +14,7 @@ RUN npm run build
 
 # Stage 2: Runtime
 FROM node:20-slim AS runner
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 ENV NODE_ENV=production
