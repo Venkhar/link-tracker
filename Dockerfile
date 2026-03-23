@@ -1,29 +1,24 @@
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-RUN apk add --no-cache openssl libc6-compat
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# Stage 2: Build
+# Stage 1: Build
 FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN ls -la prisma/ && ls -la node_modules/.bin/prisma && node -v && ./node_modules/.bin/prisma version && ./node_modules/.bin/prisma generate --schema=./prisma/schema.prisma
+RUN npx prisma generate
 RUN npm run build
 
-# Stage 3: Runtime
+# Stage 2: Runtime
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN apk add --no-cache openssl libc6-compat
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
