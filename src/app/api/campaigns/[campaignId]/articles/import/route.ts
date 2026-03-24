@@ -102,12 +102,26 @@ export async function POST(
         select: { id: true },
       });
 
-      // Lance toutes les vérifications en arrière-plan
-      createdArticles.forEach((a) => {
-        Promise.all([checkBacklink(a.id), checkIndexation(a.id)]).catch(
-          console.error
-        );
-      });
+      // Lance les vérifications en arrière-plan par batches de 3
+      // pour ne pas spammer les serveurs cibles lors d'un import massif
+      const ids: string[] = createdArticles.map((a: { id: string }) => a.id);
+      (async () => {
+        const BATCH = 3;
+        for (let i = 0; i < ids.length; i += BATCH) {
+          const batch = ids.slice(i, i + BATCH);
+          await Promise.all(
+            batch.map((id: string) =>
+              Promise.all([checkBacklink(id), checkIndexation(id)]).catch(
+                console.error
+              )
+            )
+          );
+          // Pause entre les batches (hors dernier)
+          if (i + BATCH < ids.length) {
+            await new Promise((r) => setTimeout(r, 2_000));
+          }
+        }
+      })().catch(console.error);
     }
   }
 

@@ -1,18 +1,26 @@
-import { prisma } from "@/lib/prisma";
-
-const FETCH_TIMEOUT = 15_000;
-const USER_AGENT =
-  "Mozilla/5.0 (compatible; LinkTrackerBot/1.0; +https://linktracker.app)";
-
 /**
- * Vérifie l'indexation de la page via scraping :
- *  - HTTP 4xx/5xx → NOT_INDEXED
- *  - meta robots "noindex" ou header X-Robots-Tag "noindex" → NOT_INDEXED
- *  - HTTP 200 + aucune directive noindex → INDEXED
- *  - Erreur réseau / timeout → UNKNOWN
+ * Vérification d'indexation Google via Playwright.
  *
- * Stocke le résultat dans IndexationCheck avec source=SCRAPING.
+ * Stratégie : requête "site:URL_DE_L_ARTICLE" sur Google.
+ *  - Des résultats existent → INDEXED
+ *  - "Aucun résultat" → NOT_INDEXED
+ *  - CAPTCHA / erreur réseau → UNKNOWN (on réessaiera plus tard)
+ *
+ * Anti-détection :
+ *  - Stealth plugin (fingerprint réaliste, navigator.webdriver = false)
+ *  - File d'attente globale : 1 requête à la fois + délai 6-11s
+ *  - Viewport aléatoire + locale fr-FR
+ *  - Scroll humain avant lecture des résultats
+ *  - Acceptation automatique du bandeau cookie Google
  */
+import { prisma } from "@/lib/prisma";
+import { getBrowser, randomViewport } from "@/lib/browser/instance";
+import { acquireGoogleSlot } from "@/lib/browser/google-queue";
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+
 export async function checkIndexation(articleId: string): Promise<void> {
   const article = await prisma.article.findUnique({
     where: { id: articleId },
@@ -20,46 +28,96 @@ export async function checkIndexation(articleId: string): Promise<void> {
   });
   if (!article) return;
 
+  // Attend son tour dans la file (1 requête Google à la fois)
+  const release = await acquireGoogleSlot();
+
   let status: "INDEXED" | "NOT_INDEXED" | "UNKNOWN" = "UNKNOWN";
 
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: randomViewport(),
+    locale: "fr-FR",
+    extraHTTPHeaders: {
+      "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+    },
+  });
+  const page = await context.newPage();
+
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
-    const response = await fetch(article.articleUrl, {
-      headers: { "User-Agent": USER_AGENT },
-      redirect: "follow",
-      signal: controller.signal,
+    const query = encodeURIComponent(`site:${article.articleUrl}`);
+    await page.goto(`https://www.google.fr/search?q=${query}&hl=fr&num=5`, {
+      waitUntil: "domcontentloaded",
+      timeout: 25_000,
     });
-    clearTimeout(timer);
 
-    if (!response.ok) {
-      // 4xx / 5xx → page inaccessible → non indexée
+    // ── Bandeau cookie Google ──────────────────────────────────────
+    try {
+      const acceptBtn = page.locator(
+        'button:has-text("Tout accepter"), button:has-text("Accepter tout"), button:has-text("J\'accepte")'
+      );
+      if (await acceptBtn.first().isVisible({ timeout: 3_000 })) {
+        await acceptBtn.first().click();
+        await sleep(800 + Math.random() * 700);
+      }
+    } catch {
+      /* Pas de bandeau → on continue */
+    }
+
+    // ── Détection CAPTCHA ──────────────────────────────────────────
+    const isCaptcha =
+      (await page
+        .locator(
+          'iframe[src*="recaptcha"], #captcha-form, form[action*="/sorry/"]'
+        )
+        .count()) > 0;
+
+    if (isCaptcha) {
+      // On ne peut pas contourner le CAPTCHA → UNKNOWN, on réessaiera
+      status = "UNKNOWN";
+      return;
+    }
+
+    // ── Comportement humain : scroll léger ────────────────────────
+    await page.mouse.wheel(0, 150 + Math.random() * 250);
+    await sleep(600 + Math.random() * 800);
+
+    // Attend que le bloc de résultats (ou "aucun résultat") soit chargé
+    await page
+      .waitForSelector("#search, #topstuff, #rcnt", { timeout: 10_000 })
+      .catch(() => {});
+
+    // ── Lecture des résultats ──────────────────────────────────────
+    const pageText = (await page.textContent("body")) ?? "";
+
+    const noResultSignals = [
+      "n'a renvoyé aucun résultat",
+      "did not match any documents",
+      "aucun résultat",
+      "no results found",
+    ];
+    const isNoResult = noResultSignals.some((s) =>
+      pageText.toLowerCase().includes(s.toLowerCase())
+    );
+
+    if (isNoResult) {
       status = "NOT_INDEXED";
     } else {
-      // Vérifie l'en-tête X-Robots-Tag
-      const xRobots = (response.headers.get("x-robots-tag") || "").toLowerCase();
-      if (xRobots.includes("noindex")) {
-        status = "NOT_INDEXED";
+      // Compte les résultats organiques dans #search
+      const resultCount = await page.locator("#search .g, #rso .g").count();
+      if (resultCount > 0) {
+        status = "INDEXED";
       } else {
-        const html = await response.text();
-
-        // Vérifie <meta name="robots" content="..noindex..">
-        // Les deux ordres d'attributs sont couverts
-        const noindexInMeta =
-          /<meta\s[^>]*name\s*=\s*["']robots["'][^>]*content\s*=\s*["'][^"']*noindex[^"']*["']/i.test(
-            html
-          ) ||
-          /<meta\s[^>]*content\s*=\s*["'][^"']*noindex[^"']*["'][^>]*name\s*=\s*["']robots["']/i.test(
-            html
-          );
-
-        status = noindexInMeta ? "NOT_INDEXED" : "INDEXED";
+        // Page chargée mais ni résultats ni "aucun résultat" détecté
+        // → pourrait être un changement de layout Google : on marque UNKNOWN
+        status = "UNKNOWN";
       }
     }
   } catch {
-    // Timeout ou erreur réseau
     status = "UNKNOWN";
+  } finally {
+    await context.close();
+    // Libère le slot pour le prochain check en attente
+    release();
   }
 
   await prisma.indexationCheck.create({

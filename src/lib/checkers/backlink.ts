@@ -1,13 +1,19 @@
-import { prisma } from "@/lib/prisma";
-
-const FETCH_TIMEOUT = 15_000;
-const USER_AGENT =
-  "Mozilla/5.0 (compatible; LinkTrackerBot/1.0; +https://linktracker.app)";
-
 /**
- * Vérifie la présence du backlink dans le HTML de l'article et détecte dofollow/nofollow.
- * Stocke le résultat dans BacklinkCheck.
+ * Vérification de la présence du backlink via Playwright.
+ *
+ * Avantages vs fetch+regex :
+ *  - Le JS de la page est exécuté → liens injectés dynamiquement détectés
+ *  - Pas de faux négatifs sur les sites React/Vue/SPA
+ *  - Gestion propre des liens relatifs (resolveHref)
+ *  - Détection nofollow / sponsored / ugc fiable via DOM réel
  */
+import { prisma } from "@/lib/prisma";
+import { getBrowser, randomViewport } from "@/lib/browser/instance";
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
+}
+
 export async function checkBacklink(articleId: string): Promise<void> {
   const article = await prisma.article.findUnique({
     where: { id: articleId },
@@ -20,88 +26,97 @@ export async function checkBacklink(articleId: string): Promise<void> {
   let redirectUrl: string | null = null;
   let isDofollow: boolean | null = null;
 
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: randomViewport(),
+    locale: "fr-FR",
+    extraHTTPHeaders: {
+      "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+    },
+  });
+  const page = await context.newPage();
+
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
-    const response = await fetch(article.articleUrl, {
-      headers: { "User-Agent": USER_AGENT },
-      redirect: "follow",
-      signal: controller.signal,
+    const response = await page.goto(article.articleUrl, {
+      waitUntil: "domcontentloaded",
+      timeout: 25_000,
     });
-    clearTimeout(timer);
 
-    httpCode = response.status;
+    httpCode = response?.status() ?? null;
 
-    // Détecte si une redirection a eu lieu
-    if (response.url !== article.articleUrl) {
-      redirectUrl = response.url;
+    // Détecte les redirections
+    const finalUrl = page.url();
+    if (finalUrl !== article.articleUrl && !finalUrl.startsWith("about:")) {
+      redirectUrl = finalUrl;
       status = "REDIRECTED";
     }
 
-    if (response.ok) {
-      const html = await response.text();
-
-      // Normalise l'URL cible pour la comparaison
-      const normalizedTarget = article.targetUrl
-        .replace(/\/$/, "")
-        .toLowerCase();
-      let targetDomain = "";
+    if (!response?.ok()) {
+      status = status === "REDIRECTED" ? "REDIRECTED" : "NOT_FOUND";
+    } else {
+      // Laisse le JS s'exécuter (lazy-load, React hydration, etc.)
+      await sleep(1_500 + Math.random() * 1_500);
       try {
-        targetDomain = new URL(article.targetUrl).hostname.toLowerCase();
+        await page.waitForLoadState("networkidle", { timeout: 6_000 });
       } catch {
-        // URL invalide, on continue sans le domaine
+        // networkidle peut timeout sur les pages très actives → on continue
       }
 
-      // Parcourt tous les <a ...> du HTML
-      const anchorRegex = /<a\s([^>]*?)>/gi;
-      let match: RegExpExecArray | null;
-      let found = false;
-
-      while ((match = anchorRegex.exec(html)) !== null) {
-        const attrs = match[1];
-
-        const hrefMatch = /href\s*=\s*["']([^"']*)["']/i.exec(attrs);
-        if (!hrefMatch) continue;
-
-        const href = hrefMatch[1].replace(/\/$/, "").toLowerCase().trim();
-
-        const matches =
-          href === normalizedTarget ||
-          href.startsWith(normalizedTarget) ||
-          (targetDomain !== "" && href.includes(targetDomain));
-
-        if (matches) {
-          found = true;
-          status = "FOUND";
-
-          // Détecte rel="nofollow" (ou sponsored/ugc qui impliquent nofollow)
-          const relMatch = /rel\s*=\s*["']([^"']*)["']/i.exec(attrs);
-          if (relMatch) {
-            const relVal = relMatch[1].toLowerCase();
-            isDofollow = !(
-              relVal.includes("nofollow") ||
-              relVal.includes("sponsored") ||
-              relVal.includes("ugc")
-            );
-          } else {
-            // Pas d'attribut rel = dofollow par défaut
-            isDofollow = true;
+      // Extraction des liens via le DOM réel (pas de regex)
+      const result = await page.evaluate(
+        ({ targetUrl }) => {
+          const normalizedTarget = targetUrl.replace(/\/$/, "").toLowerCase();
+          let targetDomain = "";
+          try {
+            targetDomain = new URL(targetUrl).hostname.toLowerCase();
+          } catch {
+            /* URL invalide */
           }
-          break;
-        }
-      }
 
-      if (!found && status !== "REDIRECTED") {
+          const anchors = Array.from(document.querySelectorAll("a[href]"));
+
+          for (const a of anchors) {
+            // Utilise href (résolu automatiquement par le navigateur → plus de liens relatifs manqués)
+            const fullHref = (a as HTMLAnchorElement).href
+              .replace(/\/$/, "")
+              .toLowerCase();
+            const attrHref = (a.getAttribute("href") ?? "")
+              .replace(/\/$/, "")
+              .toLowerCase();
+
+            const matches =
+              fullHref === normalizedTarget ||
+              fullHref.startsWith(normalizedTarget) ||
+              attrHref === normalizedTarget ||
+              attrHref.startsWith(normalizedTarget) ||
+              (targetDomain !== "" && fullHref.includes(targetDomain));
+
+            if (matches) {
+              const rel = (a.getAttribute("rel") ?? "").toLowerCase();
+              const dofollow =
+                !rel.includes("nofollow") &&
+                !rel.includes("sponsored") &&
+                !rel.includes("ugc");
+              return { found: true, dofollow };
+            }
+          }
+
+          return { found: false, dofollow: null };
+        },
+        { targetUrl: article.targetUrl }
+      );
+
+      if (result.found) {
+        status = "FOUND";
+        isDofollow = result.dofollow;
+      } else if (status !== "REDIRECTED") {
         status = "NOT_FOUND";
       }
-    } else if (httpCode >= 300 && httpCode < 400) {
-      status = "REDIRECTED";
-    } else {
-      status = "NOT_FOUND";
     }
   } catch {
     status = "ERROR";
+  } finally {
+    await context.close();
   }
 
   await prisma.backlinkCheck.create({
