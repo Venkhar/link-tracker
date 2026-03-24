@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionOrUnauthorized } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { articleCreateSchema } from "@/lib/validations/article";
+import { checkBacklink } from "@/lib/checkers/backlink";
+import { checkIndexation } from "@/lib/checkers/indexation";
 
 export async function GET(
   req: NextRequest,
@@ -68,6 +70,12 @@ export async function POST(
       campaignId: params.campaignId,
     },
   });
+
+  // Lance les vérifications en arrière-plan sans bloquer la réponse
+  Promise.all([
+    checkBacklink(article.id),
+    checkIndexation(article.id),
+  ]).catch(console.error);
 
   return NextResponse.json(article, { status: 201 });
 }

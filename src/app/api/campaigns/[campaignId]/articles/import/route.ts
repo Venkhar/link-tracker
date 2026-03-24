@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionOrUnauthorized } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { articleCreateSchema } from "@/lib/validations/article";
+import { checkBacklink } from "@/lib/checkers/backlink";
+import { checkIndexation } from "@/lib/checkers/indexation";
 import Papa from "papaparse";
 
 export async function POST(
@@ -89,6 +91,24 @@ export async function POST(
       skipDuplicates: true,
     });
     imported = result.count;
+
+    // Récupère les IDs des articles importés pour lancer les vérifications
+    if (imported > 0) {
+      const createdArticles = await prisma.article.findMany({
+        where: {
+          campaignId: params.campaignId,
+          articleUrl: { in: validArticles.map((a) => a.articleUrl) },
+        },
+        select: { id: true },
+      });
+
+      // Lance toutes les vérifications en arrière-plan
+      createdArticles.forEach((a) => {
+        Promise.all([checkBacklink(a.id), checkIndexation(a.id)]).catch(
+          console.error
+        );
+      });
+    }
   }
 
   return NextResponse.json({
