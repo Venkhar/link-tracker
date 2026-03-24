@@ -65,39 +65,41 @@ export async function checkBacklink(articleId: string): Promise<void> {
       // Extraction des liens via le DOM réel (pas de regex)
       const result = await page.evaluate(
         ({ targetUrl }) => {
-          const normalizedTarget = targetUrl.replace(/\/$/, "").toLowerCase();
-          let targetDomain = "";
+          // Décompose l'URL cible en hostname + pathname pour comparaison stricte
+          let targetHostname = "";
+          let targetPathname = "";
           try {
-            targetDomain = new URL(targetUrl).hostname.toLowerCase();
+            const t = new URL(targetUrl);
+            targetHostname = t.hostname.toLowerCase();
+            // Normalise le pathname : retire le slash final
+            targetPathname = t.pathname.replace(/\/$/, "").toLowerCase() || "/";
           } catch {
-            /* URL invalide */
+            return { found: false, dofollow: null };
           }
 
           const anchors = Array.from(document.querySelectorAll("a[href]"));
 
           for (const a of anchors) {
-            // Utilise href (résolu automatiquement par le navigateur → plus de liens relatifs manqués)
-            const fullHref = (a as HTMLAnchorElement).href
-              .replace(/\/$/, "")
-              .toLowerCase();
-            const attrHref = (a.getAttribute("href") ?? "")
-              .replace(/\/$/, "")
-              .toLowerCase();
+            // .href est résolu par le navigateur (liens relatifs → absolus)
+            const raw = (a as HTMLAnchorElement).href;
+            if (!raw || raw.startsWith("mailto:") || raw.startsWith("tel:") || raw.startsWith("javascript:")) continue;
 
-            const matches =
-              fullHref === normalizedTarget ||
-              fullHref.startsWith(normalizedTarget) ||
-              attrHref === normalizedTarget ||
-              attrHref.startsWith(normalizedTarget) ||
-              (targetDomain !== "" && fullHref.includes(targetDomain));
+            try {
+              const h = new URL(raw);
+              const hHostname = h.hostname.toLowerCase();
+              const hPathname = h.pathname.replace(/\/$/, "").toLowerCase() || "/";
 
-            if (matches) {
-              const rel = (a.getAttribute("rel") ?? "").toLowerCase();
-              const dofollow =
-                !rel.includes("nofollow") &&
-                !rel.includes("sponsored") &&
-                !rel.includes("ugc");
-              return { found: true, dofollow };
+              // Même domaine ET même chemin (query params et fragments ignorés)
+              if (hHostname === targetHostname && hPathname === targetPathname) {
+                const rel = (a.getAttribute("rel") ?? "").toLowerCase();
+                const dofollow =
+                  !rel.includes("nofollow") &&
+                  !rel.includes("sponsored") &&
+                  !rel.includes("ugc");
+                return { found: true, dofollow };
+              }
+            } catch {
+              // href non parsable → on passe
             }
           }
 
