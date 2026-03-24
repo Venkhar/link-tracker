@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { Megaphone, FileText, ExternalLink } from "lucide-react";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
-import { format } from "date-fns";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
