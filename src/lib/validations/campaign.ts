@@ -6,8 +6,6 @@ export const campaignCreateSchema = z.object({
   targetDomain: z.string().min(1, "Le domaine cible est requis").max(500),
   status: z.enum(["ACTIVE", "PAUSED", "COMPLETED"]).default("ACTIVE"),
   checkFrequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).default("WEEKLY"),
-  startDate: z.coerce.date().optional().nullable(),
-  endDate: z.coerce.date().optional().nullable(),
   memberIds: z.array(z.string()).optional().default([]),
 });
 
