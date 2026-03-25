@@ -205,7 +205,40 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
             />
           </button>
 
-          {/* ── Table (déroulant) ───────────────────────────── */}
+          {/* ── Vue compacte : liste des backlinks avec badges ── */}
+          {!isOpen && (
+            <div className="divide-y divide-slate-100 border-t border-slate-100">
+              {rows.map((article) => {
+                const lastCheck = article.backlinkChecks?.[0];
+                const lastIdx   = article.indexationChecks?.[0];
+                const path = (() => {
+                  try { const u = new URL(article.articleUrl); return (u.pathname + u.search).replace(/\/$/, "") || "/"; }
+                  catch { return article.articleUrl; }
+                })();
+                return (
+                  <div key={article.id} className="flex items-center gap-3 px-4 py-2">
+                    <a
+                      href={article.articleUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-500 hover:text-indigo-600 transition-colors"
+                      title={article.articleUrl}
+                    >
+                      {path}
+                    </a>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <ActiveBadge status={lastCheck?.status} />
+                      <DofollowBadge isDofollow={lastCheck?.isDofollow} backlinkStatus={lastCheck?.status} />
+                      <IndexedBadge status={lastIdx?.status} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Table détaillée (déroulant) ─────────────────── */}
           {isOpen && <table className="w-full border-t border-slate-100 text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
