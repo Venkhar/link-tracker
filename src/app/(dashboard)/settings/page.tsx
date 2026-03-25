@@ -2,9 +2,10 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { Shield, Mail, User, Globe } from "lucide-react";
+import { Shield, Mail, User } from "lucide-react";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
+import { ChangePasswordForm } from "@/components/settings/change-password-form";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -17,6 +18,7 @@ export default async function SettingsPage() {
   });
 
   const profileContent = (
+    <div className="space-y-4">
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div className="border-b px-6 py-4">
         <h2 className="text-sm font-semibold text-gray-900">Mon profil</h2>
@@ -57,6 +59,8 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+    </div>
+    <ChangePasswordForm />
     </div>
   );
 

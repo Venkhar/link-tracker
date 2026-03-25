@@ -10,8 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogOut, ChevronDown } from "lucide-react";
+import { Menu, LogOut, ChevronDown, Settings } from "lucide-react";
 import { MobileSidebar } from "./mobile-sidebar";
+import Link from "next/link";
 
 export function Header() {
   const { data: session } = useSession();
@@ -56,6 +57,13 @@ export function Header() {
             <p className="text-xs font-medium text-gray-900">{session?.user?.name}</p>
             <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
           </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href="/settings" className="flex items-center cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              Paramètres
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => signOut({ callbackUrl: "/login" })}
