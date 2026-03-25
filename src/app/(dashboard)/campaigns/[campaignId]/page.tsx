@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ArticleTable } from "@/components/articles/article-table";
 import {
   Pencil, Plus, Upload, Globe,
-  Link2, TrendingUp, ShieldCheck, Search,
+  Link2, TrendingUp, ShieldCheck, Search, BarChart3,
 } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string }> = {
@@ -129,6 +129,12 @@ export default async function CampaignDetailPage({
             <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50">
               <Upload className="h-4 w-4" />
               Importer CSV
+            </button>
+          </Link>
+          <Link href={`/campaigns/${campaign.id}/report`}>
+            <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50">
+              <BarChart3 className="h-4 w-4" />
+              Rapport
             </button>
           </Link>
         </div>

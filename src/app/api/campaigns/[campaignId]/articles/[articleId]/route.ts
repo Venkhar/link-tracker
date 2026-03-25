@@ -13,8 +13,8 @@ export async function GET(
   const article = await prisma.article.findUnique({
     where: { id: params.articleId },
     include: {
-      backlinkChecks: { orderBy: { checkedAt: "desc" }, take: 10 },
-      indexationChecks: { orderBy: { checkedAt: "desc" }, take: 10 },
+      backlinkChecks: { orderBy: { checkedAt: "desc" } },
+      indexationChecks: { orderBy: { checkedAt: "desc" } },
     },
   });
 

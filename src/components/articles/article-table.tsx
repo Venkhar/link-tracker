@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Trash2, ExternalLink, Link2Off, Globe,
   Pencil, RefreshCw, Search,
-  CheckCircle2, XCircle, Eye, Link2, Store, ChevronDown,
+  CheckCircle2, XCircle, Eye, Link2, Store, ChevronDown, Filter,
 } from "lucide-react";
+import { ArticleHistoryModal } from "./article-history-modal";
 import { cn } from "@/lib/utils";
 
 interface Article {
@@ -121,9 +122,39 @@ function IndexedBadge({ status }: { status?: string }) {
 
 const TH = "px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400";
 
+type FilterKey = "ALL" | "FOUND" | "NOT_FOUND" | "DOFOLLOW" | "NOFOLLOW" | "INDEXED" | "NOT_INDEXED";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "ALL",        label: "Tous" },
+  { key: "FOUND",      label: "Actifs" },
+  { key: "NOT_FOUND",  label: "Inactifs" },
+  { key: "DOFOLLOW",   label: "Dofollow" },
+  { key: "NOFOLLOW",   label: "Nofollow" },
+  { key: "INDEXED",    label: "Indexés" },
+  { key: "NOT_INDEXED",label: "Non indexés" },
+];
+
 export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProps) {
   const router = useRouter();
   const [openDomains, setOpenDomains] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("ALL");
+
+  const filteredArticles = useMemo(() => {
+    if (activeFilter === "ALL") return articles;
+    return articles.filter((a) => {
+      const bl = a.backlinkChecks?.[0];
+      const idx = a.indexationChecks?.[0];
+      switch (activeFilter) {
+        case "FOUND":       return bl?.status === "FOUND";
+        case "NOT_FOUND":   return bl?.status === "NOT_FOUND" || bl?.status === "ERROR" || bl?.status === "REDIRECTED";
+        case "DOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === true;
+        case "NOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === false;
+        case "INDEXED":     return idx?.status === "INDEXED";
+        case "NOT_INDEXED": return idx?.status === "NOT_INDEXED";
+        default:            return true;
+      }
+    });
+  }, [articles, activeFilter]);
 
   function toggleDomain(domain: string) {
     setOpenDomains((prev) => {
@@ -171,7 +202,7 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
     );
   }
 
-  const grouped = articles.reduce<Record<string, Article[]>>((acc, a) => {
+  const grouped = filteredArticles.reduce<Record<string, Article[]>>((acc, a) => {
     const d = getHostname(a.articleUrl);
     (acc[d] ??= []).push(a);
     return acc;
@@ -179,6 +210,53 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
 
   return (
     <div className="space-y-3">
+      {/* ── Filtres ─────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        {FILTERS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveFilter(key)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
+              activeFilter === key
+                ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+            )}
+          >
+            {label}
+            {key !== "ALL" && (
+              <span className="ml-1 text-[10px] text-slate-400">
+                ({articles.filter((a) => {
+                  const bl = a.backlinkChecks?.[0];
+                  const idx = a.indexationChecks?.[0];
+                  switch (key) {
+                    case "FOUND":       return bl?.status === "FOUND";
+                    case "NOT_FOUND":   return bl?.status === "NOT_FOUND" || bl?.status === "ERROR" || bl?.status === "REDIRECTED";
+                    case "DOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === true;
+                    case "NOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === false;
+                    case "INDEXED":     return idx?.status === "INDEXED";
+                    case "NOT_INDEXED": return idx?.status === "NOT_INDEXED";
+                    default:            return false;
+                  }
+                }).length})
+              </span>
+            )}
+          </button>
+        ))}
+        {activeFilter !== "ALL" && (
+          <span className="text-[11px] text-slate-400">
+            {filteredArticles.length} résultat{filteredArticles.length > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
+      {filteredArticles.length === 0 && activeFilter !== "ALL" && (
+        <div className="rounded-2xl border border-slate-200 bg-white py-10 text-center text-sm text-slate-400">
+          Aucun backlink ne correspond à ce filtre.
+        </div>
+      )}
+
       {Object.entries(grouped).map(([domain, rows]) => {
         const isOpen = openDomains.has(domain);
         return (
@@ -358,6 +436,11 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
+                        <ArticleHistoryModal
+                          articleId={article.id}
+                          campaignId={campaignId}
+                          articleUrl={article.articleUrl}
+                        />
                         <button
                           onClick={() => handleCheck(article.id, "backlink")}
                           className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600"
