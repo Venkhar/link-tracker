@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   Trash2, ExternalLink, Link2Off, Globe,
   Pencil, RefreshCw, Search,
-  CheckCircle2, XCircle, Eye, Link2, Store,
+  CheckCircle2, XCircle, Eye, Link2, Store, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -122,6 +123,15 @@ const TH = "px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-w
 
 export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProps) {
   const router = useRouter();
+  const [openDomains, setOpenDomains] = useState<Set<string>>(new Set());
+
+  function toggleDomain(domain: string) {
+    setOpenDomains((prev) => {
+      const next = new Set(prev);
+      next.has(domain) ? next.delete(domain) : next.add(domain);
+      return next;
+    });
+  }
 
   async function handleDelete(articleId: string) {
     if (!confirm("Supprimer ce backlink ?")) return;
@@ -169,27 +179,34 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
 
   return (
     <div className="space-y-3">
-      {Object.entries(grouped).map(([domain, rows]) => (
+      {Object.entries(grouped).map(([domain, rows]) => {
+        const isOpen = openDomains.has(domain);
+        return (
         <div key={domain} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-          {/* ── Domain header ─────────────────────────────── */}
-          <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5">
-            <Globe className="h-4 w-4 text-slate-400" />
-            <a
-              href={`https://${domain}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-sm font-semibold text-indigo-600 underline underline-offset-2 hover:text-indigo-800 transition-colors"
-            >
+          {/* ── Domain header (accordéon) ──────────────────── */}
+          <button
+            type="button"
+            onClick={() => toggleDomain(domain)}
+            className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+          >
+            <Globe className="h-4 w-4 shrink-0 text-slate-400" />
+            <span className="font-mono text-sm font-semibold text-indigo-600">
               {domain}
-            </a>
+            </span>
             <span className="text-xs text-slate-400">
               ({rows.length} {rows.length > 1 ? "liens" : "lien"})
             </span>
-          </div>
+            <ChevronDown
+              className={cn(
+                "ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+                isOpen && "rotate-180"
+              )}
+            />
+          </button>
 
-          {/* ── Table ──────────────────────────────────────── */}
-          <table className="w-full text-sm">
+          {/* ── Table (déroulant) ───────────────────────────── */}
+          {isOpen && <table className="w-full border-t border-slate-100 text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
                 <th className={TH}>Informations</th>
@@ -337,9 +354,10 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                 );
               })}
             </tbody>
-          </table>
+          </table>}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
