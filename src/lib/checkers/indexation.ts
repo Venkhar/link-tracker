@@ -305,7 +305,13 @@ export async function checkIndexation(articleId: string): Promise<void> {
 
   try {
     // Essai 1 : avec proxy (si configuré)
-    status = await performGoogleSearch(articleId, article.articleUrl, true);
+    try {
+      status = await performGoogleSearch(articleId, article.articleUrl, true);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      appLog("ERROR", "indexation.check", `Erreur avec proxy`, { articleId, url: article.articleUrl, error: errorMsg });
+      status = "UNKNOWN";
+    }
 
     // Essai 2 : si échec avec proxy, réessaie sans proxy
     if (status === "UNKNOWN") {
@@ -313,13 +319,15 @@ export async function checkIndexation(articleId: string): Promise<void> {
       if (hasProxy) {
         appLog("WARN", "indexation.check", "Échec avec proxy, retry sans proxy", { articleId, url: article.articleUrl });
         await sleep(2_000 + Math.random() * 2_000);
-        status = await performGoogleSearch(articleId, article.articleUrl, false);
+        try {
+          status = await performGoogleSearch(articleId, article.articleUrl, false);
+        } catch (err2) {
+          const errorMsg = err2 instanceof Error ? err2.message : String(err2);
+          appLog("ERROR", "indexation.check", `Erreur sans proxy également`, { articleId, url: article.articleUrl, error: errorMsg });
+          status = "UNKNOWN";
+        }
       }
     }
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    appLog("ERROR", "indexation.check", `Erreur lors de la vérification d'indexation`, { articleId, url: article.articleUrl, error: errorMsg });
-    status = "UNKNOWN";
   } finally {
     release();
   }
