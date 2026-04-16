@@ -6,6 +6,7 @@ import { Shield, Mail, User } from "lucide-react";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 import { ChangePasswordForm } from "@/components/settings/change-password-form";
+import { LogsSettings } from "@/components/settings/logs-settings";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -68,16 +69,19 @@ export default async function SettingsPage() {
     <ProxySettings initialProxies={JSON.parse(JSON.stringify(proxies))} />
   );
 
+  const logsContent = <LogsSettings />;
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Paramètres</h1>
-        <p className="text-sm text-gray-500">Gérez votre profil et la configuration des proxies.</p>
+        <p className="text-sm text-gray-500">Gérez votre profil, les proxies et consultez les logs.</p>
       </div>
 
       <SettingsTabs
         profileContent={profileContent}
         proxyContent={proxyContent}
+        logsContent={logsContent}
         proxyCount={proxies.length}
       />
     </div>

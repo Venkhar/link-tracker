@@ -9,6 +9,7 @@
  */
 import { prisma } from "@/lib/prisma";
 import { getBrowser, randomViewport } from "@/lib/browser/instance";
+import { appLog } from "@/lib/logger";
 
 function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
@@ -20,6 +21,8 @@ export async function checkBacklink(articleId: string): Promise<void> {
     select: { articleUrl: true, targetUrl: true },
   });
   if (!article) return;
+
+  appLog("INFO", "backlink.check", `Début vérification backlink`, { articleId, articleUrl: article.articleUrl, targetUrl: article.targetUrl });
 
   let status: "FOUND" | "NOT_FOUND" | "ERROR" | "REDIRECTED" = "ERROR";
   let httpCode: number | null = null;
@@ -115,11 +118,22 @@ export async function checkBacklink(articleId: string): Promise<void> {
         status = "NOT_FOUND";
       }
     }
-  } catch {
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    appLog("ERROR", "backlink.check", `Erreur lors de la vérification`, { articleId, articleUrl: article.articleUrl, error: errorMsg });
     status = "ERROR";
   } finally {
     await context.close();
   }
+
+  const levelMap = { FOUND: "INFO", NOT_FOUND: "WARN", ERROR: "ERROR", REDIRECTED: "WARN" } as const;
+  const msgMap = {
+    FOUND: `Backlink trouvé (dofollow: ${isDofollow})`,
+    NOT_FOUND: "Backlink non trouvé sur la page",
+    ERROR: "Erreur lors de la vérification",
+    REDIRECTED: `Page redirigée vers ${redirectUrl}`,
+  };
+  appLog(levelMap[status], "backlink.check", msgMap[status], { articleId, articleUrl: article.articleUrl, status, httpCode, redirectUrl, isDofollow });
 
   await prisma.backlinkCheck.create({
     data: { articleId, status, httpCode, redirectUrl, isDofollow },

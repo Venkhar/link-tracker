@@ -16,6 +16,7 @@
 import { prisma } from "@/lib/prisma";
 import { getBrowser, randomViewport, getProxyConfig } from "@/lib/browser/instance";
 import { acquireGoogleSlot } from "@/lib/browser/google-queue";
+import { appLog } from "@/lib/logger";
 
 function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
@@ -114,8 +115,7 @@ export async function checkIndexation(articleId: string): Promise<void> {
 
   try {
     const searchQuery = `site:${article.articleUrl}`;
-    console.log(`[indexation] Checking: ${article.articleUrl}`);
-    console.log(`[indexation] Query: ${searchQuery}`);
+    appLog("INFO", "indexation.check", `Début vérification indexation`, { articleId, url: article.articleUrl, query: searchQuery });
 
     // ── Étape 1 : aller sur Google.fr comme un humain ──────────────
     await page.goto("https://www.google.fr", {
@@ -182,7 +182,7 @@ export async function checkIndexation(articleId: string): Promise<void> {
     console.log(`[indexation] SERP URL: ${currentUrl}`);
 
     if (currentUrl.includes("/sorry/") || currentUrl.includes("sorry.google")) {
-      console.warn("[indexation] IP blocked (sorry page)");
+      appLog("WARN", "indexation.check", "IP bloquée par Google (page sorry)", { articleId, url: article.articleUrl, serpUrl: currentUrl });
       status = "UNKNOWN";
       return;
     }
@@ -191,7 +191,7 @@ export async function checkIndexation(articleId: string): Promise<void> {
     const hasCaptcha =
       (await page.locator('iframe[src*="recaptcha"], form[action*="/sorry/"]').count()) > 0;
     if (hasCaptcha) {
-      console.warn("[indexation] CAPTCHA detected");
+      appLog("WARN", "indexation.check", "CAPTCHA détecté par Google", { articleId, url: article.articleUrl, serpUrl: currentUrl });
       status = "UNKNOWN";
       return;
     }
@@ -227,7 +227,7 @@ export async function checkIndexation(articleId: string): Promise<void> {
     const isNoResult = noResultSignals.some((s) => lowerText.includes(s.toLowerCase()));
 
     if (isNoResult) {
-      console.log("[indexation] → NOT_INDEXED (no-result signal found)");
+      appLog("INFO", "indexation.check", `Page non indexée (aucun résultat Google)`, { articleId, url: article.articleUrl });
       status = "NOT_INDEXED";
       return;
     }
@@ -245,10 +245,9 @@ export async function checkIndexation(articleId: string): Promise<void> {
     ].join(", ");
 
     const resultCount = await page.locator(resultSelectors).count();
-    console.log(`[indexation] Organic result elements: ${resultCount}`);
 
     if (resultCount > 0) {
-      console.log("[indexation] → INDEXED");
+      appLog("INFO", "indexation.check", `Page indexée (${resultCount} résultat(s) Google)`, { articleId, url: article.articleUrl, resultCount });
       status = "INDEXED";
       return;
     }
@@ -258,21 +257,22 @@ export async function checkIndexation(articleId: string): Promise<void> {
       try { return new URL(article.articleUrl).hostname; } catch { return ""; }
     })();
     if (articleHostname && lowerText.includes(articleHostname.toLowerCase())) {
-      console.log(`[indexation] → INDEXED (hostname "${articleHostname}" found in page text)`);
+      appLog("INFO", "indexation.check", `Page indexée (hostname trouvé dans le texte, fallback)`, { articleId, url: article.articleUrl, hostname: articleHostname });
       status = "INDEXED";
       return;
     }
 
     // On est sur la SERP mais aucun résultat → page non indexée
     if (currentUrl.includes("google.fr/search") || currentUrl.includes("google.com/search")) {
-      console.log("[indexation] → NOT_INDEXED (on SERP, no results)");
+      appLog("INFO", "indexation.check", `Page non indexée (SERP sans résultat)`, { articleId, url: article.articleUrl, serpUrl: currentUrl });
       status = "NOT_INDEXED";
     } else {
-      console.warn(`[indexation] → UNKNOWN (unexpected URL: ${currentUrl})`);
+      appLog("WARN", "indexation.check", `État indéterminé — URL inattendue après recherche`, { articleId, url: article.articleUrl, serpUrl: currentUrl });
       status = "UNKNOWN";
     }
   } catch (err) {
-    console.error("[indexation] Error during check:", err);
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    appLog("ERROR", "indexation.check", `Erreur lors de la vérification d'indexation`, { articleId, url: article.articleUrl, error: errorMsg });
     status = "UNKNOWN";
   } finally {
     await context.close();

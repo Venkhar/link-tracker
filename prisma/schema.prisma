@@ -172,6 +172,25 @@ model Proxy {
   @@map("proxies")
 }
 
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
+model AppLog {
+  id        String   @id @default(cuid())
+  level     LogLevel @default(INFO)
+  action    String                      // ex: "indexation.check", "backlink.check", "proxy.import"
+  message   String
+  details   String?                     // JSON libre (URL, articleId, erreur…)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([action])
+  @@map("app_logs")
+}
+
 model Alert {
   id        String    @id @default(cuid())
   userId    String    @map("user_id")
