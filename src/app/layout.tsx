@@ -1,14 +1,31 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const serif = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+  axes: ["opsz", "SOFT"],
+});
+
+const sans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "LinkTracker PRO",
-  description: "Suivi et monitoring de backlinks",
+  title: "LinkTracker — Observatoire éditorial des backlinks",
+  description: "Surveillance et monitoring éditorial de backlinks SEO",
 };
 
 export default function RootLayout({
@@ -17,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body className={`${inter.className} antialiased`}>
+    <html lang="fr" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
+      <body className="antialiased">
         <Providers>
           {children}
           <Toaster />

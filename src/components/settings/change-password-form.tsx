@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,112 +47,129 @@ export function ChangePasswordForm() {
     reset();
   }
 
+  const inputClass = (hasError: boolean) =>
+    cn(
+      "h-10 w-full border-0 border-b border-ink/25 bg-transparent pb-2 pt-1 text-sm text-ink mono outline-none transition-colors focus:border-ink placeholder:text-ink-4",
+      hasError && "border-rust focus:border-rust"
+    );
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 border-b px-6 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 shrink-0">
-          <Lock className="h-4 w-4 text-indigo-500" />
+    <div className="sheet overflow-hidden">
+      <div className="flex items-center justify-between border-b border-ink/15 px-6 py-4">
+        <div className="flex items-center gap-2.5">
+          <Lock className="h-4 w-4 text-ink-2" />
+          <span className="eyebrow">Changer le mot de passe</span>
         </div>
-        <h2 className="text-sm font-semibold text-gray-900">Changer le mot de passe</h2>
+        <span className="mono text-[10px] text-ink-4">//</span>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="divide-y">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
-        {/* Mot de passe actuel */}
-        <div className="px-6 py-4 space-y-1.5">
-          <Label htmlFor="currentPassword" className="text-xs font-medium uppercase tracking-wide text-gray-400">
-            Mot de passe actuel
-          </Label>
-          <div className="relative">
-            <Input
-              id="currentPassword"
-              type={showCurrent ? "text" : "password"}
-              autoComplete="current-password"
-              {...register("currentPassword", { required: "Requis" })}
-              className={cn("h-10 pr-9", errors.currentPassword && "border-red-300 focus-visible:border-red-400")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowCurrent((v) => !v)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
+        <div className="px-6 py-5 space-y-5 divide-y divide-ink/10">
+          <Field label="Mot de passe actuel" error={errors.currentPassword?.message}>
+            <div className="relative">
+              <input
+                id="currentPassword"
+                type={showCurrent ? "text" : "password"}
+                autoComplete="current-password"
+                {...register("currentPassword", { required: "Requis" })}
+                className={inputClass(!!errors.currentPassword)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent((v) => !v)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-4 hover:text-ink transition-colors"
+                tabIndex={-1}
+              >
+                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </Field>
+
+          <div className="pt-5">
+            <Field
+              label="Nouveau mot de passe"
+              error={errors.newPassword?.message}
+              help="Minimum 8 caractères"
             >
-              {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+              <div className="relative">
+                <input
+                  id="newPassword"
+                  type={showNew ? "text" : "password"}
+                  autoComplete="new-password"
+                  {...register("newPassword", {
+                    required: "Requis",
+                    minLength: { value: 8, message: "Minimum 8 caractères" },
+                  })}
+                  className={inputClass(!!errors.newPassword)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew((v) => !v)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-4 hover:text-ink transition-colors"
+                  tabIndex={-1}
+                >
+                  {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </Field>
           </div>
-          {errors.currentPassword && (
-            <p className="text-xs text-red-500">{errors.currentPassword.message}</p>
-          )}
-        </div>
 
-        {/* Nouveau mot de passe */}
-        <div className="px-6 py-4 space-y-1.5">
-          <Label htmlFor="newPassword" className="text-xs font-medium uppercase tracking-wide text-gray-400">
-            Nouveau mot de passe
-          </Label>
-          <div className="relative">
-            <Input
-              id="newPassword"
-              type={showNew ? "text" : "password"}
-              autoComplete="new-password"
-              {...register("newPassword", {
-                required: "Requis",
-                minLength: { value: 8, message: "Minimum 8 caractères" },
-              })}
-              className={cn("h-10 pr-9", errors.newPassword && "border-red-300 focus-visible:border-red-400")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowNew((v) => !v)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
-            >
-              {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+          <div className="pt-5">
+            <Field label="Confirmer le nouveau mot de passe" error={errors.confirmPassword?.message}>
+              <input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                {...register("confirmPassword", {
+                  required: "Requis",
+                  validate: (v) => v === newPassword || "Les mots de passe ne correspondent pas",
+                })}
+                className={inputClass(!!errors.confirmPassword)}
+              />
+            </Field>
           </div>
-          {errors.newPassword ? (
-            <p className="text-xs text-red-500">{errors.newPassword.message}</p>
-          ) : (
-            <p className="text-xs text-gray-400">Minimum 8 caractères</p>
-          )}
         </div>
 
-        {/* Confirmation */}
-        <div className="px-6 py-4 space-y-1.5">
-          <Label htmlFor="confirmPassword" className="text-xs font-medium uppercase tracking-wide text-gray-400">
-            Confirmer le nouveau mot de passe
-          </Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            {...register("confirmPassword", {
-              required: "Requis",
-              validate: (v) => v === newPassword || "Les mots de passe ne correspondent pas",
-            })}
-            className={cn("h-10", errors.confirmPassword && "border-red-300 focus-visible:border-red-400")}
-          />
-          {errors.confirmPassword && (
-            <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>
-          )}
-        </div>
-
-        {/* Submit */}
-        <div className="flex justify-end px-6 py-4 bg-gray-50">
+        <div className="flex justify-end px-6 py-4 bg-paper-deep/40 border-t border-ink/10">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
+            className="btn-ink disabled:opacity-60"
           >
             {isSubmitting ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Enregistrement…</>
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enregistrement…</>
             ) : (
-              <><Lock className="h-4 w-4" /> Mettre à jour</>
+              <><Lock className="h-3.5 w-3.5" /> Mettre à jour</>
             )}
           </button>
         </div>
 
       </form>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  error,
+  help,
+  children,
+}: {
+  label: string;
+  error?: string;
+  help?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="eyebrow block">{label}</label>
+      {children}
+      {error ? (
+        <p className="text-[11px] text-rust italic font-serif">{error}</p>
+      ) : help ? (
+        <p className="text-[11px] text-ink-4">{help}</p>
+      ) : null}
     </div>
   );
 }

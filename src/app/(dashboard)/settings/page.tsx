@@ -18,49 +18,34 @@ export default async function SettingsPage() {
   });
 
   const profileContent = (
-    <div className="space-y-4">
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="border-b px-6 py-4">
-        <h2 className="text-sm font-semibold text-gray-900">Mon profil</h2>
-      </div>
-      <div className="divide-y">
-        <div className="flex items-center gap-4 px-6 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 shrink-0">
-            <User className="h-4 w-4 text-gray-500" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Nom</p>
-            <p className="mt-0.5 text-sm font-medium text-gray-900">{session.user.name}</p>
-          </div>
+    <div className="space-y-5">
+      <div className="sheet overflow-hidden">
+        <div className="border-b border-ink/15 px-6 py-4 flex items-center justify-between">
+          <span className="eyebrow">Mon profil</span>
+          <span className="mono text-[10px] text-ink-4">/03</span>
         </div>
-        <div className="flex items-center gap-4 px-6 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 shrink-0">
-            <Mail className="h-4 w-4 text-gray-500" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Email</p>
-            <p className="mt-0.5 text-sm font-medium text-gray-900">{session.user.email}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 px-6 py-4">
-          <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${isAdmin ? "bg-indigo-50" : "bg-gray-100"}`}>
-            <Shield className={`h-4 w-4 ${isAdmin ? "text-indigo-500" : "text-gray-500"}`} />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Rôle</p>
-            <div className="mt-0.5">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                isAdmin ? "bg-indigo-50 text-indigo-700" : "bg-gray-100 text-gray-600"
-              }`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-indigo-400" : "bg-gray-400"}`} />
-                {isAdmin ? "Administrateur" : "Membre"}
-              </span>
+        <div className="divide-y divide-ink/10">
+          <ProfileRow icon={User} label="Nom" value={session.user.name ?? ""} />
+          <ProfileRow icon={Mail} label="Email" value={session.user.email ?? ""} mono />
+          <div className="flex items-center gap-4 px-6 py-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-paper-deep shrink-0">
+              <Shield className={`h-4 w-4 ${isAdmin ? "text-rust" : "text-ink-3"}`} />
+            </div>
+            <div className="flex-1">
+              <p className="eyebrow">Rôle</p>
+              <div className="mt-1.5">
+                <span className={`inline-flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${
+                  isAdmin ? "bg-signal text-signal-ink" : "bg-paper-deep text-ink-3"
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isAdmin ? "bg-signal-ink" : "bg-ink-4"}`} />
+                  {isAdmin ? "Administrateur" : "Membre"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <ChangePasswordForm />
+      <ChangePasswordForm />
     </div>
   );
 
@@ -69,17 +54,52 @@ export default async function SettingsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Paramètres</h1>
-        <p className="text-sm text-gray-500">Gérez votre profil et la configuration des proxies.</p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-10">
+      <section className="border-b border-ink/20 pb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="eyebrow">Configuration</span>
+          <span className="h-px flex-1 bg-ink/15" />
+          <span className="mono text-[10px] text-ink-4 uppercase tracking-wider">
+            {session.user.email}
+          </span>
+        </div>
+        <h1 className="font-serif text-[48px] leading-[0.95] tracking-tightest">
+          Paramètres <span className="italic font-light">du compte</span>
+        </h1>
+        <p className="text-sm text-ink-3 mt-3">
+          Profil, mot de passe et configuration des proxies utilisés pour les vérifications.
+        </p>
+      </section>
 
       <SettingsTabs
         profileContent={profileContent}
         proxyContent={proxyContent}
         proxyCount={proxies.length}
       />
+    </div>
+  );
+}
+
+function ProfileRow({
+  icon: Icon,
+  label,
+  value,
+  mono,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-4 px-6 py-4">
+      <div className="flex h-8 w-8 items-center justify-center rounded-[3px] bg-paper-deep shrink-0">
+        <Icon className="h-4 w-4 text-ink-2" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="eyebrow">{label}</p>
+        <p className={`mt-1 text-sm font-medium text-ink truncate ${mono ? "mono" : ""}`}>{value}</p>
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
-import { ExternalLink, Link2, TrendingUp, ShieldCheck, ShieldOff, Search, CalendarDays } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -13,7 +13,6 @@ export default async function DashboardPage() {
   const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  // Charge tous les articles avec leur dernier check backlink + indexation
   const [allArticles, campaignCount, recentArticles] = await Promise.all([
     prisma.article.findMany({
       select: {
@@ -33,7 +32,7 @@ export default async function DashboardPage() {
     }),
     prisma.campaign.count({ where: { status: "ACTIVE" } }),
     prisma.article.findMany({
-      take: 5,
+      take: 6,
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -60,148 +59,217 @@ export default async function DashboardPage() {
   const nofollow = allArticles.filter((a) => a.backlinkChecks[0]?.status === "FOUND" && a.backlinkChecks[0]?.isDofollow === false).length;
   const indexed  = allArticles.filter((a) => a.indexationChecks[0]?.status === "INDEXED").length;
 
-  const ceMois      = allArticles.filter((a) => a.createdAt >= startOfThisMonth).length;
-  const lastMois    = allArticles.filter((a) => a.createdAt >= startOfLastMonth && a.createdAt < startOfThisMonth).length;
-  const ceMoisGrowth = lastMois > 0 ? Math.round(((ceMois - lastMois) / lastMois) * 100) : 0;
+  const ceMois    = allArticles.filter((a) => a.createdAt >= startOfThisMonth).length;
+  const lastMois  = allArticles.filter((a) => a.createdAt >= startOfLastMonth && a.createdAt < startOfThisMonth).length;
+  const growth    = lastMois > 0 ? Math.round(((ceMois - lastMois) / lastMois) * 100) : 0;
 
   const actifsPercent   = total > 0 ? Math.round((actifs / total) * 100) : 0;
-  const dofollowPercent = actifs > 0 ? Math.round((dofollow / actifs) * 100) : 0;
-  const nofollowPercent = actifs > 0 ? Math.round((nofollow / actifs) * 100) : 0;
   const indexedPercent  = total > 0 ? Math.round((indexed / total) * 100) : 0;
 
   const kpis = [
-    { label: "Total",    value: total,    sub: "backlinks",         color: "bg-indigo-500",  light: "bg-indigo-50",  text: "text-indigo-600",  Icon: Link2 },
-    { label: "Actifs",   value: actifs,   sub: `${actifsPercent}%`, color: "bg-emerald-500", light: "bg-emerald-50", text: "text-emerald-600", Icon: TrendingUp },
-    { label: "Dofollow", value: dofollow, sub: `${dofollowPercent}% des actifs`, color: "bg-sky-500",     light: "bg-sky-50",     text: "text-sky-600",     Icon: ShieldCheck },
-    { label: "Nofollow", value: nofollow, sub: `${nofollowPercent}% des actifs`, color: "bg-orange-400",  light: "bg-orange-50",  text: "text-orange-600",  Icon: ShieldOff },
-    { label: "Indexés",  value: indexed,  sub: `${indexedPercent}%`,color: "bg-teal-500",    light: "bg-teal-50",    text: "text-teal-600",    Icon: Search },
-    { label: "Ce mois",  value: `+${ceMois}`, sub: ceMoisGrowth !== 0 ? `${ceMoisGrowth > 0 ? "↑" : "↓"}${Math.abs(ceMoisGrowth)}% vs mois dernier` : "vs mois dernier", color: "bg-violet-500", light: "bg-violet-50", text: "text-violet-600", Icon: CalendarDays },
+    { label: "Actifs",   value: actifs,   foot: `${actifsPercent}% du parc` },
+    { label: "Dofollow", value: dofollow, foot: `${actifs > 0 ? Math.round((dofollow / actifs) * 100) : 0}% des actifs` },
+    { label: "Nofollow", value: nofollow, foot: `${actifs > 0 ? Math.round((nofollow / actifs) * 100) : 0}% des actifs` },
+    { label: "Indexés",  value: indexed,  foot: `${indexedPercent}% du parc` },
   ];
 
+  const firstName = session.user.name?.split(" ")[0] ?? "";
+
   return (
-    <div className="space-y-6">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">
-          Bonjour, {session.user.name} 👋
-        </h1>
-        <p className="text-sm text-gray-500">Vue d&apos;ensemble de vos campagnes de backlinks</p>
-      </div>
-
-      {/* KPI grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {kpis.map(({ label, value, sub, color, light, text, Icon }) => (
-          <div key={label} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${light}`}>
-              <Icon className={`h-4 w-4 ${text}`} />
+    <div className="space-y-12">
+      {/* === HERO: masthead éditorial === */}
+      <section className="grid grid-cols-12 gap-6 border-b border-ink/20 pb-10">
+        {/* Left column: greeting + context */}
+        <div className="col-span-12 lg:col-span-7 flex flex-col justify-between">
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <span className="eyebrow">Édito du jour</span>
+              <span className="h-px flex-1 bg-ink/15" />
+              <span className="mono text-[10px] text-ink-4 uppercase tracking-wider">
+                {now.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+              </span>
             </div>
-            <div>
-              <p className={`text-2xl font-bold tabular-nums ${text}`}>{value}</p>
-              <p className="mt-0.5 text-[11px] font-semibold text-slate-500">{label}</p>
-              <p className="text-[10px] text-slate-400">{sub}</p>
-            </div>
-            <div className={`h-1 w-full rounded-full ${color} opacity-20`} />
+            <h1 className="font-serif text-[56px] md:text-[72px] leading-[0.92] tracking-tightest text-ink">
+              Bonjour, <span className="italic font-light">{firstName}</span>.
+            </h1>
+            <p className="max-w-xl text-[15px] leading-relaxed text-ink-2">
+              L&apos;observatoire a veillé pendant votre absence.
+              Voici le dernier état des <span className="font-medium">{total}</span> backlinks sous surveillance,
+              répartis entre <span className="font-medium">{campaignCount}</span> campagne{campaignCount > 1 ? "s" : ""} actives.
+            </p>
           </div>
-        ))}
-      </div>
-
-      {/* Campagnes actives + backlinks récents */}
-      <div className="grid gap-4 lg:grid-cols-3">
-
-        {/* Campagnes actives */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-3.5 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-800">Campagnes actives</h2>
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[11px] font-bold text-indigo-700">{campaignCount}</span>
-          </div>
-          <div className="p-5 flex flex-col items-center justify-center gap-1 text-center py-10">
-            <p className="text-4xl font-bold text-indigo-600 tabular-nums">{campaignCount}</p>
-            <p className="text-sm text-slate-400">campagne{campaignCount > 1 ? "s" : ""} en cours</p>
-            <Link href="/campaigns" className="mt-3 text-xs font-medium text-indigo-500 hover:text-indigo-700 transition-colors">
-              Voir toutes les campagnes →
+          <div className="mt-10 flex flex-wrap gap-2">
+            <Link href="/campaigns" className="btn-ink">
+              Parcourir les campagnes
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
+            <Link
+              href="/logs"
+              className="inline-flex items-center gap-2 rounded-[3px] border border-ink/20 bg-transparent px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-ink hover:bg-ink/5 transition-colors"
+            >
+              Voir les logs
             </Link>
           </div>
         </div>
 
-        {/* Backlinks récents */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="border-b border-slate-100 px-5 py-3.5">
-            <h2 className="text-sm font-semibold text-slate-800">Backlinks récents</h2>
+        {/* Right column: big figure */}
+        <aside className="col-span-12 lg:col-span-5 relative">
+          <div className="sheet bg-ink text-paper p-7 flex flex-col h-full relative overflow-hidden">
+            {/* signal highlighter band */}
+            <div className="absolute top-0 right-0 h-[56%] w-1 bg-signal" />
+            <div className="flex items-center justify-between">
+              <span className="eyebrow text-paper/60">Parc total</span>
+              <span className="mono text-[10px] text-paper/50">backlinks</span>
+            </div>
+            <div className="flex items-end justify-between mt-2 gap-4">
+              <span className="figure-display text-[120px] md:text-[150px] text-paper">
+                {total}
+              </span>
+              <div className="pb-6">
+                <div className="flex items-center gap-1 text-signal text-sm font-medium">
+                  {growth >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                  <span className="tabular-nums">{growth >= 0 ? "+" : ""}{growth}%</span>
+                </div>
+                <div className="text-[10px] text-paper/50 uppercase tracking-wider mt-0.5">vs mois dernier</div>
+              </div>
+            </div>
+            <div className="hairline border-paper/15 mt-5 pt-5 grid grid-cols-2 gap-5 text-sm">
+              <div>
+                <div className="eyebrow text-paper/60">Ce mois</div>
+                <div className="figure-display text-[26px] text-paper mt-1">+{ceMois}</div>
+              </div>
+              <div>
+                <div className="eyebrow text-paper/60">Campagnes</div>
+                <div className="figure-display text-[26px] text-paper mt-1">{campaignCount}</div>
+              </div>
+            </div>
           </div>
+        </aside>
+      </section>
+
+      {/* === KPIs — ligne éditoriale avec hairlines === */}
+      <section>
+        <div className="flex items-baseline justify-between mb-5">
+          <div>
+            <span className="eyebrow">Indicateurs</span>
+            <h2 className="font-serif text-2xl tracking-tight mt-1">Signes vitaux du parc</h2>
+          </div>
+          <span className="mono text-[11px] text-ink-4 tabular-nums">/04</span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 border-t border-b border-ink/20 divide-x divide-ink/15">
+          {kpis.map(({ label, value, foot }, i) => (
+            <div key={label} className="px-5 py-6 relative flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="eyebrow">{label}</span>
+                <span className="mono text-[10px] text-ink-4 tabular-nums">0{i + 1}</span>
+              </div>
+              <div className="figure-display text-[52px] md:text-[68px] text-ink">{value}</div>
+              <div className="text-[11px] text-ink-3">{foot}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* === Derniers backlinks — colonne éditoriale === */}
+      <section className="grid grid-cols-12 gap-6">
+        <aside className="col-span-12 md:col-span-3">
+          <span className="eyebrow">Chronique</span>
+          <h2 className="font-serif text-2xl tracking-tight mt-1">Derniers ajouts</h2>
+          <p className="text-sm text-ink-3 mt-3 leading-relaxed">
+            Les six backlinks les plus récemment enregistrés dans l&apos;observatoire.
+            Cliquez sur une URL pour l&apos;ouvrir, ou sur la campagne pour le contexte.
+          </p>
+        </aside>
+
+        <div className="col-span-12 md:col-span-9 border-t border-b border-ink/20">
           {recentArticles.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-slate-500">Aucun backlink enregistré.</p>
+            <div className="py-16 text-center">
+              <p className="text-sm text-ink-3 font-serif italic">Aucun backlink enregistré.</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
-              {recentArticles.map((article) => {
+            <ul className="divide-y divide-ink/10">
+              {recentArticles.map((article, i) => {
                 const lastCheck = article.backlinkChecks[0];
                 const lastIdx   = article.indexationChecks[0];
                 let hostname = article.articleUrl;
-                try { hostname = new URL(article.articleUrl).hostname; } catch { /* noop */ }
+                try { hostname = new URL(article.articleUrl).hostname.replace(/^www\./, ""); } catch { /* noop */ }
 
                 return (
-                  <div key={article.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
+                  <li key={article.id} className="group flex items-center gap-4 py-4 px-1 hover:bg-paper-deep/40 transition-colors">
+                    <span className="mono text-[10px] text-ink-4 tabular-nums w-6 shrink-0">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
                     <div className="min-w-0 flex-1">
                       <a
                         href={article.articleUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 font-mono text-xs font-medium text-indigo-600 hover:underline truncate max-w-[220px]"
+                        className="mono text-[13px] text-ink hover:text-rust transition-colors truncate inline-block max-w-full"
                       >
                         {hostname}
-                        <ExternalLink className="h-2.5 w-2.5 shrink-0" />
                       </a>
-                      <Link href={`/campaigns/${article.campaign.id}`} className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors">
-                        {article.campaign.name}
-                      </Link>
+                      <div className="mt-0.5">
+                        <Link
+                          href={`/campaigns/${article.campaign.id}`}
+                          className="text-[11px] text-ink-3 hover:text-ink transition-colors italic font-serif"
+                        >
+                          {article.campaign.name}
+                        </Link>
+                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      {/* Actif / Inactif */}
                       {lastCheck ? (
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          lastCheck.status === "FOUND"
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                            : "bg-red-50 text-red-600 ring-1 ring-red-200"
-                        }`}>
-                          {lastCheck.status === "FOUND" ? "Actif" : "Inactif"}
-                        </span>
+                        <StatusChip
+                          variant={lastCheck.status === "FOUND" ? "signal" : "rust"}
+                          label={lastCheck.status === "FOUND" ? "Actif" : "Inactif"}
+                        />
                       ) : (
-                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-50 text-slate-400 ring-1 ring-slate-200">—</span>
+                        <StatusChip variant="muted" label="—" />
                       )}
-                      {/* Dofollow */}
                       {lastCheck?.status === "FOUND" && lastCheck.isDofollow !== null && (
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          lastCheck.isDofollow
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                            : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
-                        }`}>
-                          {lastCheck.isDofollow ? "dofollow" : "nofollow"}
-                        </span>
+                        <StatusChip
+                          variant={lastCheck.isDofollow ? "signal" : "muted"}
+                          label={lastCheck.isDofollow ? "dofollow" : "nofollow"}
+                        />
                       )}
-                      {/* Indexé */}
                       {lastIdx ? (
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          lastIdx.status === "INDEXED"
-                            ? "bg-teal-50 text-teal-700 ring-1 ring-teal-200"
-                            : lastIdx.status === "UNKNOWN"
-                            ? "bg-orange-50 text-orange-600 ring-1 ring-orange-200"
-                            : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                        }`}>
-                          {lastIdx.status === "INDEXED" ? "Indexé" : lastIdx.status === "UNKNOWN" ? "Erreur" : "Non indexé"}
-                        </span>
+                        <StatusChip
+                          variant={lastIdx.status === "INDEXED" ? "azure" : lastIdx.status === "UNKNOWN" ? "ochre" : "rust"}
+                          label={lastIdx.status === "INDEXED" ? "Indexé" : lastIdx.status === "UNKNOWN" ? "Erreur" : "Non indexé"}
+                        />
                       ) : (
-                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-50 text-slate-400 ring-1 ring-slate-200">Non vérifié</span>
+                        <StatusChip variant="muted" label="Non vérifié" />
                       )}
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
         </div>
-
-      </div>
+      </section>
     </div>
+  );
+}
+
+function StatusChip({
+  variant,
+  label,
+}: {
+  variant: "signal" | "rust" | "ochre" | "azure" | "muted";
+  label: string;
+}) {
+  const styles: Record<typeof variant, string> = {
+    signal: "bg-signal text-signal-ink",
+    rust: "bg-rust-soft text-rust",
+    ochre: "bg-ochre-soft text-[color:hsl(34_70%_32%)]",
+    azure: "bg-azure-soft text-azure",
+    muted: "bg-paper-deep text-ink-3",
+  };
+  return (
+    <span className={`inline-flex items-center rounded-[2px] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${styles[variant]}`}>
+      {label}
+    </span>
   );
 }

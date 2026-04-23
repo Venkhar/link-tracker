@@ -9,9 +9,44 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Times New Roman", "serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
+        // Editorial palette (first-class)
+        paper: {
+          DEFAULT: "hsl(var(--paper))",
+          deep: "hsl(var(--paper-deep))",
+          sunk: "hsl(var(--paper-sunk))",
+        },
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          2: "hsl(var(--ink-2))",
+          3: "hsl(var(--ink-3))",
+          4: "hsl(var(--ink-4))",
+        },
+        signal: {
+          DEFAULT: "hsl(var(--signal))",
+          ink: "hsl(var(--signal-ink))",
+        },
+        rust: {
+          DEFAULT: "hsl(var(--rust))",
+          soft: "hsl(var(--rust-soft))",
+        },
+        ochre: {
+          DEFAULT: "hsl(var(--ochre))",
+          soft: "hsl(var(--ochre-soft))",
+        },
+        azure: {
+          DEFAULT: "hsl(var(--azure))",
+          soft: "hsl(var(--azure-soft))",
+        },
+
+        // shadcn shim
+        border: "hsl(var(--border) / 0.14)",
+        input: "hsl(var(--input) / 0.14)",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
@@ -46,8 +81,11 @@ const config: Config = {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 1px)",
+        sm: "calc(var(--radius) - 2px)",
+      },
+      letterSpacing: {
+        tightest: "-0.04em",
       },
     },
   },

@@ -31,19 +31,32 @@ export default async function CampaignsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Campagnes</h1>
-          <p className="text-sm text-gray-500">Gérez vos campagnes de backlinks</p>
+    <div className="space-y-10">
+      {/* Editorial header */}
+      <section className="border-b border-ink/20 pb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="eyebrow">Registre</span>
+          <span className="h-px flex-1 bg-ink/15" />
+          <span className="mono text-[10px] text-ink-4 tabular-nums uppercase tracking-wider">
+            {campaigns.length.toString().padStart(3, "0")} entrées
+          </span>
         </div>
-        <Link href="/campaigns/new">
-          <button className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm">
-            <Plus className="h-4 w-4" />
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="font-serif text-[48px] leading-[0.95] tracking-tightest">
+              Campagnes <span className="italic font-light">de surveillance</span>
+            </h1>
+            <p className="text-sm text-ink-3 mt-3 max-w-lg">
+              Chaque campagne rassemble les backlinks d&apos;un client ou d&apos;une thématique.
+              Ouvrez-en une pour voir son détail.
+            </p>
+          </div>
+          <Link href="/campaigns/new" className="btn-ink">
+            <Plus className="h-3.5 w-3.5" />
             Nouvelle campagne
-          </button>
-        </Link>
-      </div>
+          </Link>
+        </div>
+      </section>
 
       <CampaignTable
         campaigns={JSON.parse(JSON.stringify(campaigns))}

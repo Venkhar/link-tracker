@@ -9,10 +9,10 @@ import { Pencil, Trash2, Eye, Globe, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  ACTIVE:    { label: "Active",    dot: "bg-emerald-400", bg: "bg-emerald-50", text: "text-emerald-700" },
-  PAUSED:    { label: "En pause",  dot: "bg-amber-400",   bg: "bg-amber-50",   text: "text-amber-700" },
-  COMPLETED: { label: "Terminée", dot: "bg-gray-400",    bg: "bg-gray-100",   text: "text-gray-600" },
+const statusConfig: Record<string, { label: string; chip: string; dot: string }> = {
+  ACTIVE:    { label: "Active",   chip: "chip-signal", dot: "bg-signal-ink" },
+  PAUSED:    { label: "En pause", chip: "chip-ochre",  dot: "bg-ochre" },
+  COMPLETED: { label: "Terminée", chip: "bg-paper-deep text-ink-3", dot: "bg-ink-4" },
 };
 
 interface Campaign {
@@ -63,59 +63,55 @@ export function CampaignTable({ campaigns, isAdmin }: CampaignTableProps) {
 
   if (campaigns.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-16 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-          <Globe className="h-6 w-6 text-gray-400" />
+      <div className="flex flex-col items-center justify-center border border-dashed border-ink/25 bg-paper-deep/30 py-20 text-center rounded-md">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-paper-deep">
+          <Globe className="h-5 w-5 text-ink-3" />
         </div>
-        <p className="text-sm font-medium text-gray-900">Aucune campagne</p>
-        <p className="mt-1 text-sm text-gray-500">Créez votre première campagne pour commencer.</p>
-        <Link href="/campaigns/new">
-          <Button className="mt-4 h-9 bg-indigo-600 hover:bg-indigo-700 text-sm">
-            Créer une campagne
-          </Button>
+        <p className="font-serif text-xl tracking-tight text-ink">Aucune campagne</p>
+        <p className="mt-2 text-sm text-ink-3 italic font-serif">Créez votre première campagne pour commencer.</p>
+        <Link href="/campaigns/new" className="btn-ink mt-5">
+          Créer une campagne
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
 
       {/* ── Recherche + filtres ──────────────────────────────── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* Barre de recherche */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-4 pointer-events-none" />
           <input
             type="text"
             placeholder="Rechercher une campagne ou un domaine…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-800 placeholder-slate-400 shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition"
+            className="h-10 w-full rounded-[3px] border border-ink/20 bg-paper pl-9 pr-9 text-sm text-ink placeholder:text-ink-4 outline-none focus:border-ink transition"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-ink-4 hover:text-ink"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        {/* Filtres par domaine */}
         {domains.length > 1 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="shrink-0 text-xs text-slate-400">Site :</span>
+            <span className="eyebrow shrink-0 mr-1">Site</span>
             {domains.map((d) => (
               <button
                 key={d}
                 onClick={() => setActiveDomain(activeDomain === d ? null : d)}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[11px] font-medium transition-colors",
+                  "inline-flex items-center gap-1.5 rounded-[2px] border px-2.5 py-1 mono text-[11px] font-medium transition-colors",
                   activeDomain === d
-                    ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                    : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                    ? "border-ink bg-ink text-paper"
+                    : "border-ink/20 bg-transparent text-ink-3 hover:border-ink/40 hover:text-ink"
                 )}
               >
                 <Globe className="h-3 w-3 shrink-0" />
@@ -125,7 +121,7 @@ export function CampaignTable({ campaigns, isAdmin }: CampaignTableProps) {
             {activeDomain && (
               <button
                 onClick={() => setActiveDomain(null)}
-                className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] text-ink-4 hover:text-rust transition-colors"
               >
                 <X className="h-3 w-3" />
                 Réinitialiser
@@ -135,94 +131,116 @@ export function CampaignTable({ campaigns, isAdmin }: CampaignTableProps) {
         )}
       </div>
 
-      {/* ── Tableau ─────────────────────────────────────────── */}
-      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+      {/* ── Tableau éditorial ────────────────────────────────── */}
+      <div className="border-t border-b border-ink/25 overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="mb-3 h-8 w-8 text-slate-300" />
-            <p className="text-sm font-medium text-slate-600">Aucun résultat</p>
-            <p className="mt-1 text-xs text-slate-400">Modifiez votre recherche ou réinitialisez les filtres.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Search className="mb-3 h-7 w-7 text-ink-4" />
+            <p className="font-serif text-lg text-ink italic">Aucun résultat</p>
+            <p className="mt-1 text-xs text-ink-3">Modifiez votre recherche ou réinitialisez les filtres.</p>
           </div>
         ) : (
         <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-gray-50">
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Campagne</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Site</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Statut</th>
-            <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Articles</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Plateforme</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Créé par</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {filtered.map((campaign) => {
-            const s = statusConfig[campaign.status] || statusConfig.ACTIVE;
-            return (
-              <tr key={campaign.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3.5">
-                  <p className="font-medium text-gray-900">{campaign.name}</p>
-                </td>
-                <td className="px-4 py-3.5">
-                  <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-600">
-                    <Globe className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    {campaign.targetDomain}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${s.bg} ${s.text}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                    {s.label}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5 text-center">
-                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-2 text-xs font-semibold text-gray-700">
-                    {campaign._count.articles}
-                  </span>
-                </td>
-                <td className="px-4 py-3.5">
-                  {campaign.plateforme
-                    ? <span className="text-xs text-slate-600">{campaign.plateforme}</span>
-                    : <span className="text-xs text-slate-300">—</span>
-                  }
-                </td>
-                <td className="px-4 py-3.5 text-gray-500 text-xs">{campaign.createdBy.name}</td>
-                <td className="px-4 py-3.5 text-gray-400 text-xs">
-                  {format(new Date(campaign.createdAt), "dd/MM/yyyy")}
-                </td>
-                <td className="px-4 py-3.5">
-                  <div className="flex justify-end gap-1">
-                    <Link href={`/campaigns/${campaign.id}`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <Link href={`/campaigns/${campaign.id}/edit`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => handleDelete(campaign.id, campaign.name)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
+          <thead>
+            <tr className="border-b border-ink/15">
+              <Th>Campagne</Th>
+              <Th>Site</Th>
+              <Th>Statut</Th>
+              <Th align="center">Articles</Th>
+              <Th>Plateforme</Th>
+              <Th>Créé par</Th>
+              <Th>Date</Th>
+              <Th align="right">Actions</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((campaign, i) => {
+              const s = statusConfig[campaign.status] || statusConfig.ACTIVE;
+              return (
+                <tr
+                  key={campaign.id}
+                  className={cn(
+                    "group transition-colors hover:bg-paper-deep/40",
+                    i !== filtered.length - 1 && "border-b border-ink/10"
+                  )}
+                >
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="mono text-[10px] text-ink-4 tabular-nums w-6">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <p className="font-medium text-ink">{campaign.name}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className="inline-flex items-center gap-1.5 mono text-xs text-ink-2">
+                      <Globe className="h-3.5 w-3.5 shrink-0 text-ink-4" />
+                      {campaign.targetDomain}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`inline-flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${s.chip}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+                      {s.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    <span className="figure-display text-[22px] text-ink">{campaign._count.articles}</span>
+                  </td>
+                  <td className="px-4 py-4">
+                    {campaign.plateforme
+                      ? <span className="text-xs text-ink-2 italic font-serif">{campaign.plateforme}</span>
+                      : <span className="text-xs text-ink-4">—</span>
+                    }
+                  </td>
+                  <td className="px-4 py-4 text-ink-3 text-xs">{campaign.createdBy.name}</td>
+                  <td className="px-4 py-4 text-ink-4 text-[11px] mono tabular-nums">
+                    {format(new Date(campaign.createdAt), "dd.MM.yyyy")}
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex justify-end gap-0.5">
+                      <Link href={`/campaigns/${campaign.id}`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-ink-3 hover:text-ink hover:bg-paper-deep">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Link href={`/campaigns/${campaign.id}/edit`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-ink-3 hover:text-ink hover:bg-paper-deep">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-ink-4 hover:text-rust hover:bg-rust-soft"
+                          onClick={() => handleDelete(campaign.id, campaign.name)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
         </table>
         )}
       </div>
     </div>
+  );
+}
+
+function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "center" | "right" }) {
+  return (
+    <th className={cn(
+      "px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-3",
+      align === "left" && "text-left",
+      align === "center" && "text-center",
+      align === "right" && "text-right",
+    )}>
+      {children}
+    </th>
   );
 }

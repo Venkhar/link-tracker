@@ -3,27 +3,36 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Megaphone, Settings, ScrollText, Link as LinkIcon } from "lucide-react";
+import { LayoutDashboard, Megaphone, Settings, ScrollText } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/campaigns", label: "Campagnes", icon: Megaphone },
-  { href: "/logs", label: "Logs", icon: ScrollText },
-  { href: "/settings", label: "Paramètres", icon: Settings },
+  { href: "/",          label: "Dashboard",  folio: "01", icon: LayoutDashboard },
+  { href: "/campaigns", label: "Campagnes",  folio: "02", icon: Megaphone },
+  { href: "/logs",      label: "Logs",       folio: "03", icon: ScrollText },
+  { href: "/settings",  label: "Paramètres", folio: "04", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:w-60 md:flex-col bg-slate-900">
-      <div className="flex h-16 items-center gap-2.5 px-5 border-b border-slate-800">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500">
-          <LinkIcon className="h-4 w-4 text-white" />
+    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col bg-ink text-paper relative overflow-hidden">
+      {/* Masthead */}
+      <div className="relative px-6 pt-8 pb-7 border-b border-paper/10">
+        <div className="flex items-baseline gap-2">
+          <span className="eyebrow text-paper/50">Édition No.IV</span>
+          <span className="ml-auto font-mono text-[10px] text-paper/40 tabular-nums">MMXXVI</span>
         </div>
-        <span className="text-sm font-semibold text-white tracking-wide">LinkTracker PRO</span>
+        <h1 className="mt-3 font-serif text-[30px] leading-[0.9] tracking-tightest text-paper">
+          Link<span className="italic text-signal">tracker</span>
+        </h1>
+        <p className="mt-2 text-[11px] text-paper/55 leading-snug max-w-[180px]">
+          L&apos;observatoire éditorial <br /> des backlinks SEO.
+        </p>
       </div>
-      <nav className="flex-1 p-3 space-y-0.5">
+
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-5 space-y-0.5">
         {navItems.map((item) => {
           const isActive =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -32,23 +41,39 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                "group flex items-center gap-3 rounded-[3px] px-3 py-2.5 text-sm transition-all relative",
                 isActive
-                  ? "bg-slate-800 text-white"
-                  : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                  ? "bg-paper text-ink"
+                  : "text-paper/70 hover:bg-paper/5 hover:text-paper"
               )}
             >
-              <item.icon className={cn("h-4 w-4", isActive ? "text-indigo-400" : "")} />
-              {item.label}
+              <span
+                className={cn(
+                  "font-mono text-[10px] tabular-nums",
+                  isActive ? "text-rust" : "text-paper/30 group-hover:text-paper/60"
+                )}
+              >
+                {item.folio}
+              </span>
+              <item.icon className="h-[15px] w-[15px] stroke-[1.75]" />
+              <span className="font-medium tracking-tight">{item.label}</span>
               {isActive && (
-                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                <span className="ml-auto h-1.5 w-1.5 rounded-full bg-signal" />
               )}
             </Link>
           );
         })}
       </nav>
-      <div className="p-4 border-t border-slate-800">
-        <p className="text-xs text-slate-600 text-center">v1.0.0</p>
+
+      {/* Colophon */}
+      <div className="border-t border-paper/10 px-6 py-5 space-y-3">
+        <div className="flex items-center justify-between text-[10px] text-paper/40 uppercase tracking-[0.18em]">
+          <span>Colophon</span>
+          <span className="font-mono">v1.0</span>
+        </div>
+        <div className="text-[10px] text-paper/55 leading-relaxed font-serif italic">
+          «&nbsp;Chaque lien est un témoin. <br /> On les observe, on les archive.&nbsp;»
+        </div>
       </div>
     </aside>
   );

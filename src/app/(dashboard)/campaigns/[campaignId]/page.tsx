@@ -5,14 +5,13 @@ import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 import { ArticleTable } from "@/components/articles/article-table";
 import {
-  Pencil, Plus, Upload, Globe,
-  Link2, TrendingUp, ShieldCheck, Search, BarChart3,
+  Pencil, Plus, Upload, Globe, BarChart3,
 } from "lucide-react";
 
-const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  ACTIVE:    { label: "Active",    dot: "bg-emerald-400", bg: "bg-emerald-50",  text: "text-emerald-700" },
-  PAUSED:    { label: "En pause",  dot: "bg-amber-400",   bg: "bg-amber-50",    text: "text-amber-700"   },
-  COMPLETED: { label: "Terminée", dot: "bg-slate-400",   bg: "bg-slate-100",   text: "text-slate-600"   },
+const statusConfig: Record<string, { label: string; chip: string; dot: string }> = {
+  ACTIVE:    { label: "Active",   chip: "chip-signal", dot: "bg-signal-ink" },
+  PAUSED:    { label: "En pause", chip: "chip-ochre",  dot: "bg-ochre" },
+  COMPLETED: { label: "Terminée", chip: "bg-paper-deep text-ink-3", dot: "bg-ink-4" },
 };
 
 export default async function CampaignDetailPage({
@@ -48,107 +47,99 @@ export default async function CampaignDetailPage({
   const indexedCnt  = campaign.articles.filter((a) => a.indexationChecks?.[0]?.status === "INDEXED").length;
   const budget      = campaign.articles.reduce((sum, a) => sum + ((a as { prix?: number | null }).prix ?? 0), 0);
 
-  return (
-    <div className="space-y-6">
+  const kpis = [
+    { label: "Backlinks", value: total },
+    { label: "Actifs",    value: actifCount },
+    { label: "Dofollow",  value: dofollowCnt },
+    { label: "Indexés",   value: indexedCnt },
+  ];
 
-      {/* ── Header ──────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{campaign.name}</h1>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${s.bg} ${s.text}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-              {s.label}
-            </span>
-          </div>
-          <p className="flex items-center gap-1.5 font-mono text-xs text-slate-400">
-            <Globe className="h-3.5 w-3.5" />
-            {campaign.targetDomain}
-          </p>
+  return (
+    <div className="space-y-10">
+
+      {/* ── Editorial header ───────────────────────────────── */}
+      <section className="border-b border-ink/20 pb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <Link href="/campaigns" className="eyebrow hover:text-ink transition-colors">
+            ← Campagnes
+          </Link>
+          <span className="h-px flex-1 bg-ink/15" />
+          <span className={`inline-flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${s.chip}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+            {s.label}
+          </span>
         </div>
-        {isAdmin && (
-          <Link href={`/campaigns/${campaign.id}/edit`}>
-            <button className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-800">
+
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <h1 className="font-serif text-[48px] leading-[0.95] tracking-tightest text-ink">
+              {campaign.name}
+            </h1>
+            <p className="mt-3 flex items-center gap-2 mono text-xs text-ink-3">
+              <Globe className="h-3.5 w-3.5" />
+              {campaign.targetDomain}
+            </p>
+          </div>
+          {isAdmin && (
+            <Link
+              href={`/campaigns/${campaign.id}/edit`}
+              className="inline-flex items-center gap-2 rounded-[3px] border border-ink/20 bg-transparent px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-ink hover:bg-ink/5 transition-colors"
+            >
               <Pencil className="h-3.5 w-3.5" />
               Modifier
-            </button>
-          </Link>
-        )}
-      </div>
+            </Link>
+          )}
+        </div>
+      </section>
 
-      {/* ── KPI strip ───────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-100">
-            <Link2 className="h-4 w-4 text-indigo-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums text-slate-800">{total}</p>
-            <p className="text-[11px] font-medium text-slate-400">Backlinks</p>
-          </div>
+      {/* ── KPI editorial strip ────────────────────────────── */}
+      <section>
+        <div className="grid grid-cols-2 md:grid-cols-4 border-t border-b border-ink/20 divide-x divide-ink/15">
+          {kpis.map(({ label, value }, i) => (
+            <div key={label} className="px-5 py-6 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="eyebrow">{label}</span>
+                <span className="mono text-[10px] text-ink-4 tabular-nums">0{i + 1}</span>
+              </div>
+              <div className="figure-display text-[56px] text-ink">{value}</div>
+            </div>
+          ))}
         </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100">
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums text-slate-800">{actifCount}</p>
-            <p className="text-[11px] font-medium text-slate-400">Actifs</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-100">
-            <ShieldCheck className="h-4 w-4 text-sky-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums text-slate-800">{dofollowCnt}</p>
-            <p className="text-[11px] font-medium text-slate-400">Dofollow</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-100">
-            <Search className="h-4 w-4 text-teal-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold tabular-nums text-slate-800">{indexedCnt}</p>
-            <p className="text-[11px] font-medium text-slate-400">Indexés</p>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      {/* ── Actions + budget ────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Link href={`/campaigns/${campaign.id}/articles/new`}>
-            <button className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 active:scale-[0.98]">
-              <Plus className="h-4 w-4" />
-              Ajouter un backlink
-            </button>
+      {/* ── Actions + budget ──────────────────────────────── */}
+      <section className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link href={`/campaigns/${campaign.id}/articles/new`} className="btn-ink">
+            <Plus className="h-3.5 w-3.5" />
+            Ajouter un backlink
           </Link>
-          <Link href={`/campaigns/${campaign.id}/articles/import`}>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50">
-              <Upload className="h-4 w-4" />
-              Importer CSV
-            </button>
+          <Link
+            href={`/campaigns/${campaign.id}/articles/import`}
+            className="inline-flex items-center gap-2 rounded-[3px] border border-ink/20 bg-transparent px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-ink hover:bg-ink/5 transition-colors"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Importer CSV
           </Link>
-          <Link href={`/campaigns/${campaign.id}/report`}>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:bg-slate-50">
-              <BarChart3 className="h-4 w-4" />
-              Rapport
-            </button>
+          <Link
+            href={`/campaigns/${campaign.id}/report`}
+            className="inline-flex items-center gap-2 rounded-[3px] border border-ink/20 bg-transparent px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-ink hover:bg-ink/5 transition-colors"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            Rapport
           </Link>
         </div>
         {budget > 0 && (
-          <span className="text-xs text-slate-400">
-            Budget investi :{" "}
-            <span className="font-mono font-bold text-slate-700">
+          <div className="flex items-baseline gap-2 font-serif text-ink">
+            <span className="eyebrow text-ink-3">Budget</span>
+            <span className="figure-display text-2xl tabular-nums">
               {budget.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })}
             </span>
-          </span>
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* ── Backlinks table ─────────────────────────────────── */}
+      {/* ── Backlinks table ───────────────────────────────── */}
       <ArticleTable
         articles={JSON.parse(JSON.stringify(campaign.articles))}
         campaignId={campaign.id}

@@ -4,33 +4,200 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    /* === Editorial Observatory palette ===
+       Paper-on-ink editorial aesthetic. Warm cream ground,
+       deep ink type, acid lime signal, rust alerts, ochre warnings. */
+    --paper: 42 38% 93%;        /* #F5F0E4 — warm cream ground */
+    --paper-deep: 40 34% 87%;   /* #EAE3D1 — nested card tone */
+    --paper-sunk: 38 28% 82%;   /* #DDD4BE — hover/pressed */
+    --ink: 40 10% 9%;           /* #1A1816 — near-black ink */
+    --ink-2: 38 8% 22%;         /* #3D3A35 — strong secondary */
+    --ink-3: 36 6% 42%;         /* #716D65 — muted text */
+    --ink-4: 34 6% 62%;         /* #A39E93 — faint label */
+    --rule: 40 10% 9% / 0.14;   /* hairline */
+    --rule-strong: 40 10% 9% / 0.28;
+
+    --signal: 75 100% 64%;      /* #D6FF47 — acid lime signature */
+    --signal-ink: 72 100% 12%;  /* #2B3B00 — text on signal */
+    --rust: 14 78% 43%;         /* #C4461A — alert / inactive */
+    --rust-soft: 14 70% 93%;    /* rust tint bg */
+    --ochre: 34 76% 56%;        /* #E8A33D — warning */
+    --ochre-soft: 34 70% 92%;
+    --azure: 208 55% 25%;       /* #1C3F5E — indexed / calm accent */
+    --azure-soft: 208 40% 90%;
+
+    /* === shadcn shim — map existing tokens to new palette === */
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: 40 40% 98%;           /* a whisper lighter than paper for cards */
+    --card-foreground: var(--ink);
+    --popover: 40 40% 98%;
+    --popover-foreground: var(--ink);
+    --primary: var(--ink);
+    --primary-foreground: var(--paper);
+    --secondary: var(--paper-deep);
+    --secondary-foreground: var(--ink);
+    --muted: var(--paper-deep);
+    --muted-foreground: var(--ink-3);
+    --accent: var(--paper-deep);
+    --accent-foreground: var(--ink);
+    --destructive: var(--rust);
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 10% 9%;          /* consumed through --rule mostly */
+    --input: 40 10% 9%;
+    --ring: var(--ink);
+    --radius: 0.375rem;
+
+    /* Grain + textures */
+    --grain: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0 0.08  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>");
   }
 
   * {
-    @apply border-border;
+    border-color: hsl(var(--ink) / 0.14);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--paper));
+    color: hsl(var(--ink));
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Paper grain overlay — fixed, above bg, below content */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: var(--grain);
+    background-size: 180px 180px;
+    opacity: 0.55;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Keep app content above the grain */
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-serif), "Times New Roman", serif;
+    letter-spacing: -0.015em;
+  }
+
+  /* Default numeric display — tabular by default when using .nums */
+  .nums, .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "cv11";
+  }
+
+  ::selection {
+    background: hsl(var(--signal));
+    color: hsl(var(--signal-ink));
+  }
+}
+
+@layer components {
+  /* Editorial eyebrow label — tiny uppercase tracking */
+  .eyebrow {
+    @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-3;
+  }
+
+  /* Hairline horizontal rule */
+  .hairline {
+    border-top: 1px solid hsl(var(--ink) / 0.14);
+  }
+  .hairline-strong {
+    border-top: 1px solid hsl(var(--ink) / 0.32);
+  }
+
+  /* Editorial card — cream sheet laid on paper */
+  .sheet {
+    @apply bg-card rounded-md;
+    box-shadow:
+      0 0 0 1px hsl(var(--ink) / 0.10),
+      0 1px 0 0 hsl(var(--ink) / 0.04);
+  }
+
+  /* Big figure in serif with italic context */
+  .figure-display {
+    font-family: var(--font-serif), serif;
+    font-weight: 400;
+    font-variation-settings: "opsz" 96, "SOFT" 100;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+
+  .mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-feature-settings: "ss02", "cv11";
+  }
+
+  /* Signal chip — the signature green */
+  .chip-signal {
+    background-color: hsl(var(--signal));
+    color: hsl(var(--signal-ink));
+  }
+  .chip-rust {
+    background-color: hsl(var(--rust-soft));
+    color: hsl(var(--rust));
+  }
+  .chip-ochre {
+    background-color: hsl(var(--ochre-soft));
+    color: hsl(34 70% 32%);
+  }
+  .chip-azure {
+    background-color: hsl(var(--azure-soft));
+    color: hsl(var(--azure));
+  }
+  .chip-ink {
+    background-color: hsl(var(--ink));
+    color: hsl(var(--paper));
+  }
+
+  /* Ink button */
+  .btn-ink {
+    @apply inline-flex items-center gap-2 rounded-[3px] bg-ink px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-paper transition-all hover:bg-ink/88 active:translate-y-px;
+  }
+
+  /* Ghost — underline link style, editorial */
+  .link-editorial {
+    @apply font-medium text-ink underline decoration-ink/30 decoration-[1.5px] underline-offset-[5px] transition-colors hover:decoration-ink;
+  }
+}
+
+@layer utilities {
+  /* Gentle reveal on page load */
+  .fade-up {
+    animation: fadeUp 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .fade-in {
+    animation: fadeIn 0.5s ease-out both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Ticker marquee (used in header folio) */
+  .ticker {
+    animation: ticker 40s linear infinite;
+  }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
   }
 }

@@ -8,26 +8,27 @@ import {
   Megaphone,
   Settings,
   ScrollText,
-  Link as LinkIcon,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/campaigns", label: "Campagnes", icon: Megaphone },
-  { href: "/logs", label: "Logs", icon: ScrollText },
-  { href: "/settings", label: "Paramètres", icon: Settings },
+  { href: "/",          label: "Dashboard",  folio: "01", icon: LayoutDashboard },
+  { href: "/campaigns", label: "Campagnes",  folio: "02", icon: Megaphone },
+  { href: "/logs",      label: "Logs",       folio: "03", icon: ScrollText },
+  { href: "/settings",  label: "Paramètres", folio: "04", icon: Settings },
 ];
 
 export function MobileSidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <LinkIcon className="h-6 w-6 text-blue-600" />
-        <span className="text-lg font-bold">LinkTracker PRO</span>
+    <div className="flex h-full flex-col bg-ink text-paper">
+      <div className="px-6 pt-7 pb-5 border-b border-paper/10">
+        <span className="eyebrow text-paper/50">Édition No.IV</span>
+        <h1 className="mt-2 font-serif text-2xl tracking-tightest">
+          Link<span className="italic text-signal">tracker</span>
+        </h1>
       </div>
-      <nav className="flex-1 space-y-1 p-4">
+      <nav className="flex-1 space-y-0.5 p-3">
         {navItems.map((item) => {
           const isActive =
             item.href === "/"
@@ -38,13 +39,21 @@ export function MobileSidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-[3px] px-3 py-2.5 text-sm transition-colors",
                 isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-paper text-ink"
+                  : "text-paper/70 hover:bg-paper/5 hover:text-paper"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <span
+                className={cn(
+                  "font-mono text-[10px] tabular-nums",
+                  isActive ? "text-rust" : "text-paper/30"
+                )}
+              >
+                {item.folio}
+              </span>
+              <item.icon className="h-4 w-4 stroke-[1.75]" />
               {item.label}
             </Link>
           );
