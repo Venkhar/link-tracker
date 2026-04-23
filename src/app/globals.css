@@ -166,7 +166,7 @@
 
   /* Ink button */
   .btn-ink {
-    @apply inline-flex items-center gap-2 rounded-[3px] bg-ink px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-paper transition-all hover:bg-ink/88 active:translate-y-px;
+    @apply inline-flex items-center gap-2 rounded-[3px] bg-ink px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-paper transition-all hover:bg-ink/85 active:translate-y-px;
   }
 
   /* Ghost — underline link style, editorial */

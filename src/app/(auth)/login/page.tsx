@@ -73,7 +73,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="group mt-4 inline-flex w-full items-center justify-between gap-3 rounded-[3px] bg-ink px-5 py-3.5 text-xs font-medium uppercase tracking-[0.15em] text-paper transition-all hover:bg-ink/88 active:translate-y-px disabled:opacity-60"
+        className="group mt-4 inline-flex w-full items-center justify-between gap-3 rounded-[3px] bg-ink px-5 py-3.5 text-xs font-medium uppercase tracking-[0.15em] text-paper transition-all hover:bg-ink/85 active:translate-y-px disabled:opacity-60"
       >
         <span>{loading ? "Connexion en cours…" : "Entrer dans l'observatoire"}</span>
         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
