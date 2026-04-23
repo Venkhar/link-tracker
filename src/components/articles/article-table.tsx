@@ -45,10 +45,10 @@ function ArticleLink({ url, maxWidth = "max-w-[300px]" }: { url: string; maxWidt
       title={url}
       className={cn("group inline-flex items-center gap-1", maxWidth)}
     >
-      <span className="truncate font-mono text-[11px] text-indigo-600 underline underline-offset-2 group-hover:text-indigo-800 transition-colors">
+      <span className="truncate mono text-[11px] text-ink hover:text-rust transition-colors underline decoration-ink/20 decoration-[1px] underline-offset-[3px] group-hover:decoration-rust">
         {display}
       </span>
-      <ExternalLink className="h-2.5 w-2.5 shrink-0 text-slate-300 group-hover:text-indigo-400 transition-colors" />
+      <ExternalLink className="h-2.5 w-2.5 shrink-0 text-ink-4 group-hover:text-rust transition-colors" />
     </a>
   );
 }
@@ -58,15 +58,10 @@ function ActiveBadge({ status }: { status?: string }) {
   const active = status === "FOUND";
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold w-fit",
-      active
-        ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
-        : "bg-red-50 text-red-600 ring-1 ring-inset ring-red-200"
+      "inline-flex items-center gap-1 rounded-[2px] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] w-fit",
+      active ? "chip-signal" : "chip-rust"
     )}>
-      {active
-        ? <CheckCircle2 className="h-3.5 w-3.5" />
-        : <XCircle className="h-3.5 w-3.5" />
-      }
+      {active ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
       {active ? "Actif" : "Inactif"}
     </span>
   );
@@ -77,32 +72,28 @@ function DofollowBadge({ isDofollow, backlinkStatus }: { isDofollow?: boolean | 
   if (isDofollow === null || isDofollow === undefined) return null;
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold w-fit",
-      isDofollow
-        ? "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200"
-        : "bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200"
+      "inline-flex items-center gap-1 rounded-[2px] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] w-fit",
+      isDofollow ? "chip-signal" : "bg-paper-deep text-ink-3"
     )}>
-      <CheckCircle2 className="h-3.5 w-3.5" />
+      <CheckCircle2 className="h-3 w-3" />
       {isDofollow ? "dofollow" : "nofollow"}
     </span>
   );
 }
 
 function IndexedBadge({ status }: { status?: string }) {
-  // Aucune vérification effectuée
   if (!status) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold w-fit bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200">
-        <Eye className="h-3.5 w-3.5" />
+      <span className="inline-flex items-center gap-1 rounded-[2px] bg-paper-deep px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-4 w-fit">
+        <Eye className="h-3 w-3" />
         Non vérifié
       </span>
     );
   }
-  // Check effectué mais résultat indéterminé (CAPTCHA, erreur réseau…)
   if (status === "UNKNOWN") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold w-fit bg-orange-50 text-orange-600 ring-1 ring-inset ring-orange-200">
-        <Eye className="h-3.5 w-3.5" />
+      <span className="inline-flex items-center gap-1 rounded-[2px] chip-ochre px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] w-fit">
+        <Eye className="h-3 w-3" />
         Erreur check
       </span>
     );
@@ -110,18 +101,16 @@ function IndexedBadge({ status }: { status?: string }) {
   const indexed = status === "INDEXED";
   return (
     <span className={cn(
-      "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold w-fit",
-      indexed
-        ? "bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200"
-        : "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200"
+      "inline-flex items-center gap-1 rounded-[2px] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] w-fit",
+      indexed ? "chip-azure" : "chip-ochre"
     )}>
-      <Eye className="h-3.5 w-3.5" />
+      <Eye className="h-3 w-3" />
       {indexed ? "Indexé" : "Non indexé"}
     </span>
   );
 }
 
-const TH = "px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-slate-400";
+const TH = "px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-3";
 
 type FilterKey = "ALL" | "FOUND" | "NOT_FOUND" | "DOFOLLOW" | "NOFOLLOW" | "INDEXED" | "NOT_INDEXED";
 
@@ -161,7 +150,8 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
   function toggleDomain(domain: string) {
     setOpenDomains((prev) => {
       const next = new Set(prev);
-      next.has(domain) ? next.delete(domain) : next.add(domain);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
       return next;
     });
   }
@@ -194,12 +184,12 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
 
   if (articles.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white py-16 text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-          <Link2Off className="h-5 w-5 text-slate-400" />
+      <div className="flex flex-col items-center justify-center border border-dashed border-ink/25 bg-paper-deep/30 py-16 text-center rounded-md">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-paper-deep">
+          <Link2Off className="h-5 w-5 text-ink-3" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">Aucun backlink enregistré</p>
-        <p className="mt-1 text-sm text-slate-400">Ajoutez des backlinks manuellement ou importez un fichier CSV.</p>
+        <p className="font-serif text-xl text-ink italic">Aucun backlink enregistré</p>
+        <p className="mt-2 text-sm text-ink-3">Ajoutez des backlinks manuellement ou importez un fichier CSV.</p>
       </div>
     );
   }
@@ -209,9 +199,6 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
     (acc[d] ??= []).push(a);
     return acc;
   }, {});
-
-  const allDomains = Object.keys(grouped);
-  const allOpen = allDomains.length > 0 && allDomains.every((d) => openDomains.has(d));
 
   async function handleCheckAll() {
     setChecking(true);
@@ -230,16 +217,20 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
     }
   }
 
+  function actionBtn(title: string) {
+    return "inline-flex h-7 w-7 items-center justify-center rounded-[3px] border border-ink/15 bg-paper text-ink-3 transition-colors hover:border-ink/40 hover:text-ink hover:bg-paper-deep/60";
+  }
+
   return (
-    <div className="space-y-3">
-      {/* ── Barre d'actions globales ─────────────────────────── */}
+    <div className="space-y-5">
+      {/* ── Actions globales ─────────────────────────────── */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setOpenDomains(new Set(Object.keys(
               articles.reduce<Record<string, true>>((acc, a) => { acc[getHostname(a.articleUrl)] = true; return acc; }, {})
             )))}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-[3px] border border-ink/20 bg-transparent px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink hover:bg-ink/5 transition-colors"
             title="Tout ouvrir"
           >
             <ChevronsUpDown className="h-3.5 w-3.5" />
@@ -247,7 +238,7 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
           </button>
           <button
             onClick={() => setOpenDomains(new Set())}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-800"
+            className="inline-flex items-center gap-1.5 rounded-[3px] border border-ink/20 bg-transparent px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink hover:bg-ink/5 transition-colors"
             title="Tout fermer"
           >
             <ChevronsDownUp className="h-3.5 w-3.5" />
@@ -257,7 +248,7 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
         <button
           onClick={handleCheckAll}
           disabled={checking}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-60"
+          className="btn-ink disabled:opacity-60"
           title="Relancer tous les checks"
         >
           {checking
@@ -268,82 +259,85 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
         </button>
       </div>
 
-      {/* ── Filtres ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Filter className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setActiveFilter(key)}
-            className={cn(
-              "rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
-              activeFilter === key
-                ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700"
-            )}
-          >
-            {label}
-            {key !== "ALL" && (
-              <span className="ml-1 text-[10px] text-slate-400">
-                ({articles.filter((a) => {
-                  const bl = a.backlinkChecks?.[0];
-                  const idx = a.indexationChecks?.[0];
-                  switch (key) {
-                    case "FOUND":       return bl?.status === "FOUND";
-                    case "NOT_FOUND":   return bl?.status === "NOT_FOUND" || bl?.status === "ERROR" || bl?.status === "REDIRECTED";
-                    case "DOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === true;
-                    case "NOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === false;
-                    case "INDEXED":     return idx?.status === "INDEXED";
-                    case "NOT_INDEXED": return idx?.status === "NOT_INDEXED";
-                    default:            return false;
-                  }
-                }).length})
+      {/* ── Filtres éditoriaux ───────────────────────────── */}
+      <div className="flex items-center gap-1.5 flex-wrap border-b border-ink/15 pb-3">
+        <Filter className="h-3.5 w-3.5 shrink-0 text-ink-3 mr-1" />
+        {FILTERS.map(({ key, label }) => {
+          const active = activeFilter === key;
+          const count = key === "ALL"
+            ? articles.length
+            : articles.filter((a) => {
+                const bl = a.backlinkChecks?.[0];
+                const idx = a.indexationChecks?.[0];
+                switch (key) {
+                  case "FOUND":       return bl?.status === "FOUND";
+                  case "NOT_FOUND":   return bl?.status === "NOT_FOUND" || bl?.status === "ERROR" || bl?.status === "REDIRECTED";
+                  case "DOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === true;
+                  case "NOFOLLOW":    return bl?.status === "FOUND" && bl?.isDofollow === false;
+                  case "INDEXED":     return idx?.status === "INDEXED";
+                  case "NOT_INDEXED": return idx?.status === "NOT_INDEXED";
+                  default:            return false;
+                }
+              }).length;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveFilter(key)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-[2px] border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors",
+                active
+                  ? "border-ink bg-ink text-paper"
+                  : "border-ink/20 bg-transparent text-ink-3 hover:border-ink/40 hover:text-ink"
+              )}
+            >
+              {label}
+              <span className={cn(
+                "mono tabular-nums text-[10px]",
+                active ? "text-paper/60" : "text-ink-4"
+              )}>
+                {count}
               </span>
-            )}
-          </button>
-        ))}
-        {activeFilter !== "ALL" && (
-          <span className="text-[11px] text-slate-400">
-            {filteredArticles.length} résultat{filteredArticles.length > 1 ? "s" : ""}
-          </span>
-        )}
+            </button>
+          );
+        })}
       </div>
 
       {filteredArticles.length === 0 && activeFilter !== "ALL" && (
-        <div className="rounded-2xl border border-slate-200 bg-white py-10 text-center text-sm text-slate-400">
-          Aucun backlink ne correspond à ce filtre.
+        <div className="border border-dashed border-ink/20 py-10 text-center rounded-md">
+          <p className="font-serif italic text-ink-3">Aucun backlink ne correspond à ce filtre.</p>
         </div>
       )}
 
       {Object.entries(grouped).map(([domain, rows]) => {
         const isOpen = openDomains.has(domain);
         return (
-        <div key={domain} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div key={domain} className="sheet overflow-hidden">
 
-          {/* ── Domain header (accordéon) ──────────────────── */}
+          {/* ── Domain header ──────────────────────────── */}
           <button
             type="button"
             onClick={() => toggleDomain(domain)}
-            className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+            className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-paper-deep/40 border-b border-transparent data-[open=true]:border-ink/15"
+            data-open={isOpen}
           >
-            <Globe className="h-4 w-4 shrink-0 text-slate-400" />
-            <span className="font-mono text-sm font-semibold text-indigo-600">
+            <Globe className="h-4 w-4 shrink-0 text-ink-3" />
+            <span className="mono text-sm font-medium text-ink">
               {domain}
             </span>
-            <span className="text-xs text-slate-400">
-              ({rows.length} {rows.length > 1 ? "liens" : "lien"})
+            <span className="mono text-[11px] text-ink-4 tabular-nums">
+              · {rows.length} lien{rows.length > 1 ? "s" : ""}
             </span>
             <ChevronDown
               className={cn(
-                "ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+                "ml-auto h-4 w-4 shrink-0 text-ink-3 transition-transform duration-200",
                 isOpen && "rotate-180"
               )}
             />
           </button>
 
-          {/* ── Vue compacte : liste des backlinks avec badges ── */}
+          {/* ── Vue compacte ──────────────────────────── */}
           {!isOpen && (
-            <div className="divide-y divide-slate-100 border-t border-slate-100">
+            <div className="divide-y divide-ink/10 border-t border-ink/10">
               {rows.map((article) => {
                 const lastCheck = article.backlinkChecks?.[0];
                 const lastIdx   = article.indexationChecks?.[0];
@@ -352,13 +346,13 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                   catch { return article.articleUrl; }
                 })();
                 return (
-                  <div key={article.id} className="flex items-center gap-3 px-4 py-2">
+                  <div key={article.id} className="flex items-center gap-3 px-5 py-2.5">
                     <a
                       href={article.articleUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-500 hover:text-indigo-600 transition-colors"
+                      className="min-w-0 flex-1 truncate mono text-[11px] text-ink-3 hover:text-ink transition-colors"
                       title={article.articleUrl}
                     >
                       {path}
@@ -374,18 +368,18 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
             </div>
           )}
 
-          {/* ── Table détaillée (déroulant) ─────────────────── */}
-          {isOpen && <table className="w-full border-t border-slate-100 text-sm">
+          {/* ── Table détaillée ───────────────────────── */}
+          {isOpen && <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
+              <tr className="border-b border-ink/15">
                 <th className={TH}>Informations</th>
                 <th className={cn(TH, "w-[170px]")}>Statut</th>
                 <th className={cn(TH, "w-[150px]")}>Dernière vérification</th>
-                <th className={cn(TH, "w-[130px]")}>Actions</th>
+                <th className={cn(TH, "w-[150px]")}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((article) => {
+            <tbody>
+              {rows.map((article, i) => {
                 const lastCheck = article.backlinkChecks?.[0];
                 const lastIdx   = article.indexationChecks?.[0];
                 const checkedAt = lastCheck?.checkedAt
@@ -398,65 +392,63 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                 return (
                   <tr
                     key={article.id}
-                    className="group align-top transition-colors hover:bg-slate-50/60"
+                    className={cn(
+                      "group align-top transition-colors hover:bg-paper-deep/30",
+                      i !== rows.length - 1 && "border-b border-ink/10"
+                    )}
                   >
-                    {/* ── Informations ──────────────────── */}
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-4">
                       <div className="space-y-1.5">
 
-                        {/* Line 1: domain + anchor + prix/DR/TF/DA */}
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs font-bold text-slate-800">{domain}</span>
+                          <span className="mono text-xs font-semibold text-ink">{domain}</span>
                           {article.anchorText ? (
-                            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
-                              &ldquo;{article.anchorText}&rdquo;
+                            <span className="rounded-[2px] bg-paper-deep px-1.5 py-0.5 font-serif italic text-[11px] text-ink-2">
+                              «&nbsp;{article.anchorText}&nbsp;»
                             </span>
                           ) : (
-                            <span className="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-600 ring-1 ring-inset ring-orange-200">
+                            <span className="rounded-[2px] chip-ochre px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]">
                               Aucune ancre
                             </span>
                           )}
-                          <div className="ml-auto flex items-center gap-3 text-[10px] text-slate-400 shrink-0">
+                          <div className="ml-auto flex items-center gap-3 text-[10px] text-ink-4 shrink-0 eyebrow">
                             <span>
-                              PRIX{" "}
-                              <span className="font-mono font-bold text-slate-700">
+                              Prix{" "}
+                              <span className="mono font-bold text-ink">
                                 {article.prix != null
                                   ? article.prix.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 })
                                   : "—"}
                               </span>
                             </span>
-                            <span>DR <span className="font-semibold text-slate-500">-</span></span>
-                            <span>TF <span className="font-semibold text-slate-500">-</span></span>
-                            <span>DA <span className="font-semibold text-slate-500">-</span></span>
+                            <span>DR <span className="font-semibold text-ink-3">-</span></span>
+                            <span>TF <span className="font-semibold text-ink-3">-</span></span>
+                            <span>DA <span className="font-semibold text-ink-3">-</span></span>
                           </div>
                         </div>
 
-                        {/* Line 2: Article URL */}
                         <div className="flex items-center gap-1.5">
-                          <span className="shrink-0 text-[10px] font-medium text-slate-400">URL :</span>
+                          <span className="shrink-0 eyebrow">URL</span>
                           <ArticleLink url={article.articleUrl} maxWidth="max-w-[400px]" />
                         </div>
 
-                        {/* Line 3: Target URL */}
                         <div className="flex items-center gap-1.5">
-                          <span className="shrink-0 text-[10px] font-medium text-slate-400">Pointe vers :</span>
+                          <span className="shrink-0 eyebrow">Pointe vers</span>
                           <ArticleLink url={article.targetUrl} maxWidth="max-w-[360px]" />
                         </div>
 
-                        {/* Line 4: Type + Source */}
-                        <div className="flex items-center gap-4 text-[11px] text-slate-500">
+                        <div className="flex items-center gap-4 text-[11px] text-ink-3 pt-0.5">
                           <span className="inline-flex items-center gap-1">
-                            <Link2 className="h-3 w-3 text-slate-400" />
-                            Type :{" "}
-                            <span className="font-medium text-slate-700">
+                            <Link2 className="h-3 w-3 text-ink-4" />
+                            <span className="eyebrow">Type</span>
+                            <span className="font-medium text-ink">
                               {article.type === "ARTICLE" ? "Article" : article.type === "FORUM" ? "Forum" : "Communiqué"}
                             </span>
                           </span>
                           {article.source && (
                             <span className="inline-flex items-center gap-1">
-                              <Store className="h-3 w-3 text-slate-400" />
-                              Source :{" "}
-                              <span className="font-medium text-slate-700">{article.source}</span>
+                              <Store className="h-3 w-3 text-ink-4" />
+                              <span className="eyebrow">Source</span>
+                              <span className="font-medium text-ink">{article.source}</span>
                             </span>
                           )}
                         </div>
@@ -464,8 +456,7 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                       </div>
                     </td>
 
-                    {/* ── Statut : 3 badges empilés ─────── */}
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col gap-1.5">
                         <ActiveBadge status={lastCheck?.status} />
                         <DofollowBadge
@@ -476,20 +467,18 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                       </div>
                     </td>
 
-                    {/* ── Dernière vérification ─────────── */}
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-4">
                       {checkedAt
-                        ? <span className="text-xs text-slate-500 tabular-nums">{checkedAt}</span>
-                        : <span className="select-none text-xs text-slate-300">—</span>
+                        ? <span className="mono text-[11px] text-ink-2 tabular-nums">{checkedAt}</span>
+                        : <span className="select-none text-xs text-ink-4">—</span>
                       }
                     </td>
 
-                    {/* ── Actions ───────────────────────── */}
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => router.push(`/campaigns/${campaignId}/articles/${article.id}/edit`)}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+                          className={actionBtn("Modifier")}
                           title="Modifier"
                         >
                           <Pencil className="h-3.5 w-3.5" />
@@ -501,14 +490,14 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                         />
                         <button
                           onClick={() => handleCheck(article.id, "backlink")}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-50 hover:text-sky-600"
+                          className={actionBtn("Vérifier backlink")}
                           title="Vérifier le backlink"
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleCheck(article.id, "indexation")}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-600"
+                          className={actionBtn("Vérifier indexation")}
                           title="Vérifier l'indexation"
                         >
                           <Search className="h-3.5 w-3.5" />
@@ -516,7 +505,7 @@ export function ArticleTable({ articles, campaignId, isAdmin }: ArticleTableProp
                         {isAdmin && (
                           <button
                             onClick={() => handleDelete(article.id)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-[3px] border border-ink/15 bg-paper text-ink-4 transition-colors hover:border-rust/40 hover:bg-rust-soft hover:text-rust"
                             title="Supprimer"
                           >
                             <Trash2 className="h-3.5 w-3.5" />

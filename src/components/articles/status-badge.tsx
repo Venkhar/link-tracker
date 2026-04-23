@@ -1,18 +1,18 @@
-const statusConfig: Record<string, { label: string; dot: string; bg: string; text: string }> = {
-  PENDING:   { label: "En attente", dot: "bg-amber-400",  bg: "bg-amber-50",  text: "text-amber-700" },
-  SENT:      { label: "Envoyé",     dot: "bg-blue-400",   bg: "bg-blue-50",   text: "text-blue-700" },
-  CONFIRMED: { label: "Confirmé",   dot: "bg-emerald-400",bg: "bg-emerald-50",text: "text-emerald-700" },
-  DELETED:   { label: "Supprimé",   dot: "bg-red-400",    bg: "bg-red-50",    text: "text-red-700" },
-  FOUND:         { label: "Trouvé",     dot: "bg-emerald-400",bg: "bg-emerald-50",text: "text-emerald-700" },
-  NOT_FOUND:     { label: "Introuvable",dot: "bg-red-400",    bg: "bg-red-50",    text: "text-red-700" },
-  ERROR:         { label: "Erreur",     dot: "bg-orange-400", bg: "bg-orange-50", text: "text-orange-700" },
-  REDIRECTED:    { label: "Redirigé",   dot: "bg-purple-400", bg: "bg-purple-50", text: "text-purple-700" },
+const statusConfig: Record<string, { label: string; chip: string; dot: string }> = {
+  PENDING:    { label: "En attente", chip: "chip-ochre",                    dot: "bg-ochre" },
+  SENT:       { label: "Envoyé",     chip: "chip-azure",                    dot: "bg-azure" },
+  CONFIRMED:  { label: "Confirmé",   chip: "chip-signal",                   dot: "bg-signal-ink" },
+  DELETED:    { label: "Supprimé",   chip: "bg-rust text-white",            dot: "bg-white/60" },
+  FOUND:      { label: "Trouvé",     chip: "chip-signal",                   dot: "bg-signal-ink" },
+  NOT_FOUND:  { label: "Introuvable",chip: "chip-rust",                     dot: "bg-rust" },
+  ERROR:      { label: "Erreur",     chip: "chip-ochre",                    dot: "bg-ochre" },
+  REDIRECTED: { label: "Redirigé",   chip: "bg-paper-deep text-ink-2",      dot: "bg-ink-3" },
 };
 
 export function StatusBadge({ status }: { status: string }) {
   const config = statusConfig[status] || statusConfig.PENDING;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.bg} ${config.text}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${config.chip}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
       {config.label}
     </span>

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Upload, FileText, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ImportResult {
   imported: number;
@@ -56,36 +56,47 @@ export function CsvImportForm({ campaignId }: { campaignId: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Importer via CSV</h1>
-        <p className="mt-1 text-sm text-gray-500">
+    <div className="mx-auto max-w-2xl space-y-8">
+
+      <section className="border-b border-ink/20 pb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="eyebrow">Import groupé</span>
+          <span className="h-px flex-1 bg-ink/15" />
+          <span className="mono text-[10px] text-ink-4 uppercase tracking-wider">CSV · max 500 lignes</span>
+        </div>
+        <h1 className="font-serif text-[40px] leading-[0.95] tracking-tightest">
+          Importer via <span className="italic font-light">CSV</span>
+        </h1>
+        <p className="mt-3 text-sm text-ink-3 max-w-xl">
           Importez jusqu&apos;à 500 articles en une seule fois depuis un fichier CSV.
         </p>
-      </div>
+      </section>
 
-      <div className="rounded-xl border bg-white shadow-sm">
+      <div className="sheet">
         <div className="p-6 space-y-5">
-          {/* Drop zone */}
+
           <label
             htmlFor="csv-file"
-            className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 cursor-pointer transition-colors ${
+            className={cn(
+              "flex flex-col items-center justify-center border border-dashed p-10 cursor-pointer transition-colors rounded-md",
               dragging
-                ? "border-indigo-400 bg-indigo-50"
-                : "border-gray-200 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50/50"
-            }`}
+                ? "border-ink bg-paper-deep/60"
+                : "border-ink/25 bg-paper-deep/30 hover:border-ink/50 hover:bg-paper-deep/50"
+            )}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-3">
-              <Upload className="h-5 w-5 text-indigo-500" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-paper mb-3">
+              <Upload className="h-4 w-4" />
             </div>
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm text-ink">
               Glissez votre fichier ici ou{" "}
-              <span className="text-indigo-600 hover:underline">parcourez</span>
+              <span className="underline decoration-ink/30 decoration-[1.5px] underline-offset-[3px] hover:decoration-ink">parcourez</span>
             </p>
-            <p className="mt-1.5 text-xs text-gray-400">Uniquement les fichiers .csv — max. 500 lignes</p>
+            <p className="mt-2 mono text-[10px] text-ink-4 uppercase tracking-[0.12em]">
+              .csv uniquement
+            </p>
             <input
               id="csv-file"
               type="file"
@@ -99,58 +110,60 @@ export function CsvImportForm({ campaignId }: { campaignId: string }) {
           </label>
 
           {/* Format info */}
-          <div className="rounded-lg bg-gray-50 border px-4 py-3 text-xs text-gray-500 space-y-1">
-            <p className="font-medium text-gray-700 mb-1.5">Colonnes attendues</p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-              <span><code className="text-indigo-600">article_url</code> — URL de l&apos;article</span>
-              <span><code className="text-indigo-600">target_url</code> — URL cible du backlink</span>
-              <span><code className="text-indigo-600">anchor_text</code> — Texte d&apos;ancre <span className="text-gray-400">(optionnel)</span></span>
-              <span><code className="text-indigo-600">source</code> — Plateforme / source <span className="text-gray-400">(optionnel)</span></span>
-              <span><code className="text-indigo-600">type</code> — ARTICLE, FORUM ou COMMUNIQUE <span className="text-gray-400">(optionnel)</span></span>
-              <span><code className="text-indigo-600">prix</code> — Prix en euros <span className="text-gray-400">(optionnel)</span></span>
-              <span><code className="text-indigo-600">status</code> — Statut initial <span className="text-gray-400">(optionnel)</span></span>
+          <div className="border-l-2 border-ink/30 pl-4 py-1">
+            <p className="eyebrow mb-2">Colonnes attendues</p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mono text-[11px] text-ink-2">
+              <span><span className="text-rust">article_url</span> — URL de l&apos;article</span>
+              <span><span className="text-rust">target_url</span> — URL cible du backlink</span>
+              <span><span className="text-rust">anchor_text</span> — Ancre <span className="text-ink-4 italic font-serif normal-case">(opt.)</span></span>
+              <span><span className="text-rust">source</span> — Plateforme <span className="text-ink-4 italic font-serif normal-case">(opt.)</span></span>
+              <span><span className="text-rust">type</span> — ARTICLE / FORUM / COMMUNIQUE <span className="text-ink-4 italic font-serif normal-case">(opt.)</span></span>
+              <span><span className="text-rust">prix</span> — Prix en euros <span className="text-ink-4 italic font-serif normal-case">(opt.)</span></span>
+              <span><span className="text-rust">status</span> — Statut initial <span className="text-ink-4 italic font-serif normal-case">(opt.)</span></span>
             </div>
           </div>
 
-          {/* File selected */}
           {file && (
-            <div className="flex items-center gap-3 rounded-lg border bg-white px-4 py-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50">
-                <FileText className="h-4 w-4 text-indigo-600" />
+            <div className="flex items-center gap-3 border border-ink/20 bg-paper px-4 py-3 rounded-[3px]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-[3px] bg-paper-deep">
+                <FileText className="h-4 w-4 text-ink-2" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} Ko</p>
+                <p className="mono text-sm text-ink truncate">{file.name}</p>
+                <p className="mono text-[10px] text-ink-4 tabular-nums">{(file.size / 1024).toFixed(1)} Ko</p>
               </div>
               <button
                 type="button"
                 onClick={() => { setFile(null); setResult(null); }}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                className="eyebrow text-ink-3 hover:text-rust transition-colors"
               >
                 Retirer
               </button>
             </div>
           )}
 
-          {/* Results */}
           {result && (
-            <div className="rounded-lg border overflow-hidden">
-              <div className="flex items-center gap-3 bg-emerald-50 border-b px-4 py-3">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span className="text-sm font-medium text-emerald-800">
-                  {result.imported} / {result.total} articles importés avec succès
+            <div className="border border-ink/20 overflow-hidden rounded-[3px]">
+              <div className="flex items-center gap-3 chip-signal px-4 py-3 border-b border-ink/15">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span className="text-xs">
+                  <span className="mono tabular-nums font-bold">{result.imported} / {result.total}</span>
+                  <span className="ml-2 uppercase tracking-[0.08em] text-[11px]">articles importés</span>
                 </span>
               </div>
               {result.errors.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border-b">
-                    <XCircle className="h-4 w-4 text-red-500 shrink-0" />
-                    <span className="text-sm font-medium text-red-700">{result.errors.length} erreur(s)</span>
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-rust-soft border-b border-ink/15">
+                    <XCircle className="h-4 w-4 text-rust shrink-0" />
+                    <span className="text-xs text-rust">
+                      <span className="mono tabular-nums font-bold">{result.errors.length}</span>
+                      <span className="ml-2 uppercase tracking-[0.08em] text-[11px]">erreur{result.errors.length > 1 ? "s" : ""}</span>
+                    </span>
                   </div>
-                  <div className="max-h-40 overflow-y-auto divide-y">
+                  <div className="max-h-40 overflow-y-auto divide-y divide-ink/10">
                     {result.errors.map((err, i) => (
-                      <div key={i} className="px-4 py-2 text-xs text-red-600 bg-white">
-                        <span className="font-medium">Ligne {err.row}</span> — {err.message}
+                      <div key={i} className="px-4 py-2 text-xs text-rust bg-paper">
+                        <span className="mono tabular-nums font-semibold">Ligne {err.row}</span> — {err.message}
                       </div>
                     ))}
                   </div>
@@ -160,31 +173,30 @@ export function CsvImportForm({ campaignId }: { campaignId: string }) {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t bg-gray-50 px-6 py-4 rounded-b-xl">
-          <Button
-            variant="outline"
-            className="h-9"
+        <div className="flex items-center justify-end gap-3 border-t border-ink/10 bg-paper-deep/40 px-6 py-4">
+          <button
             onClick={() => router.push(`/campaigns/${campaignId}`)}
+            className="inline-flex items-center rounded-[3px] border border-ink/20 bg-transparent px-3.5 py-2 text-xs font-medium uppercase tracking-[0.12em] text-ink hover:bg-ink/5 transition-colors"
           >
             Retour
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={handleImport}
             disabled={!file || loading}
-            className="h-9 bg-indigo-600 hover:bg-indigo-700"
+            className="btn-ink disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Import en cours...
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Import en cours…
               </>
             ) : (
               <>
-                <Upload className="mr-2 h-4 w-4" />
+                <Upload className="h-3.5 w-3.5" />
                 Importer
               </>
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

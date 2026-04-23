@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Globe, ToggleLeft, ToggleRight,
-  ShieldCheck, Info, List, AlignJustify, CheckSquare,
+  Info, List, AlignJustify, CheckSquare,
   Square, MinusSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,36 +35,23 @@ function proxyProtocol(url: string): string {
   catch { return "HTTP"; }
 }
 
-const PROTOCOL_COLORS: Record<string, string> = {
-  HTTP:   "bg-sky-50 text-sky-700 ring-sky-200",
-  HTTPS:  "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  SOCKS4: "bg-violet-50 text-violet-700 ring-violet-200",
-  SOCKS5: "bg-purple-50 text-purple-700 ring-purple-200",
-};
-
 export function ProxySettings({ initialProxies }: ProxySettingsProps) {
   const [proxies, setProxies] = useState<Proxy[]>(initialProxies);
 
-  // ── Mode d'ajout ──────────────────────────────────────────────
   const [mode, setMode] = useState<"single" | "bulk">("single");
 
-  // Mode simple
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
   const [adding, setAdding] = useState(false);
 
-  // Mode bulk
   const [bulkText, setBulkText] = useState("");
   const [importing, setImporting] = useState(false);
 
-  // Sélection multiple
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
-  // ── Stats ─────────────────────────────────────────────────────
   const activeCount = proxies.filter((p) => p.isActive).length;
 
-  // ── Parsing bulk en temps réel ────────────────────────────────
   const bulkParsed = useMemo(() => {
     const lines = bulkText
       .split("\n")
@@ -75,18 +62,14 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
     return { valid, invalid, total: lines.length };
   }, [bulkText]);
 
-  // ── Sélection ─────────────────────────────────────────────────
   const allSelected =
     proxies.length > 0 && proxies.every((p) => selected.has(p.id));
   const someSelected =
     selected.size > 0 && !allSelected;
 
   function toggleSelectAll() {
-    if (allSelected) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(proxies.map((p) => p.id)));
-    }
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(proxies.map((p) => p.id)));
   }
 
   function toggleSelect(id: string) {
@@ -97,7 +80,6 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
     });
   }
 
-  // ── Handlers ──────────────────────────────────────────────────
   async function handleAddSingle(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
@@ -133,7 +115,6 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
 
     if (res.ok) {
       const data = await res.json();
-      // Merge avec les proxies existants (sans doublons)
       setProxies((prev) => {
         const existingIds = new Set(prev.map((p) => p.id));
         const newOnes = (data.proxies as Proxy[]).filter(
@@ -199,132 +180,114 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
-      {/* ── En-tête ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
+      {/* ── En-tête éditorial ──────────────────────────────── */}
+      <div className="flex items-end justify-between gap-4 pb-4 border-b border-ink/15">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">Proxies de rotation</h2>
-          <p className="mt-0.5 text-xs text-gray-500">
-            Utilisés pour les vérifications Google. Un proxy actif est sélectionné aléatoirement à chaque requête.
+          <span className="eyebrow">Infrastructure</span>
+          <h2 className="font-serif text-2xl tracking-tight mt-1">Proxies de rotation</h2>
+          <p className="mt-2 text-xs text-ink-3 max-w-lg leading-relaxed">
+            Utilisés pour les vérifications Google. Un proxy actif est sélectionné
+            aléatoirement à chaque requête.
           </p>
         </div>
         {proxies.length > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            {activeCount} actif{activeCount > 1 ? "s" : ""} / {proxies.length}
+          <div className="flex items-baseline gap-1.5 shrink-0">
+            <span className="figure-display text-3xl text-ink">{activeCount}</span>
+            <span className="mono text-[11px] text-ink-3">/ {proxies.length} actifs</span>
           </div>
         )}
       </div>
 
-      {/* ── Formats acceptés ──────────────────────────────────── */}
-      <div className="flex items-start gap-2 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-500" />
-        <div className="text-xs text-sky-700 space-y-0.5">
-          <p className="font-semibold">Formats acceptés (un proxy par ligne en import masse)</p>
-          <p className="font-mono">host:port</p>
-          <p className="font-mono">host:port:password</p>
-          <p className="font-mono">host:port:user:password</p>
-          <p className="font-mono">http://user:password@host:port</p>
-          <p className="font-mono">socks5://user:password@host:port</p>
+      {/* ── Formats acceptés — note de bas de page ─────────── */}
+      <aside className="flex items-start gap-3 border-l-2 border-ink/30 pl-4 py-1">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-3" />
+        <div className="text-xs text-ink-2 space-y-1 font-serif italic">
+          <p className="not-italic font-sans eyebrow not-italic">Formats acceptés</p>
+          <p className="mono not-italic text-[11px] text-ink-3">host:port</p>
+          <p className="mono not-italic text-[11px] text-ink-3">host:port:password</p>
+          <p className="mono not-italic text-[11px] text-ink-3">host:port:user:password</p>
+          <p className="mono not-italic text-[11px] text-ink-3">http://user:password@host:port</p>
+          <p className="mono not-italic text-[11px] text-ink-3">socks5://user:password@host:port</p>
         </div>
-      </div>
+      </aside>
 
-      {/* ── Zone d'ajout ──────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-
-        {/* Toggle simple / masse */}
-        <div className="flex border-b border-gray-100">
-          <button
-            onClick={() => setMode("single")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium transition-colors",
-              mode === "single"
-                ? "bg-white text-indigo-600 border-b-2 border-indigo-500 -mb-px"
-                : "text-gray-400 hover:text-gray-600 bg-gray-50"
-            )}
-          >
-            <List className="h-3.5 w-3.5" />
-            Un proxy
-          </button>
-          <button
-            onClick={() => setMode("bulk")}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium transition-colors",
-              mode === "bulk"
-                ? "bg-white text-indigo-600 border-b-2 border-indigo-500 -mb-px"
-                : "text-gray-400 hover:text-gray-600 bg-gray-50"
-            )}
-          >
-            <AlignJustify className="h-3.5 w-3.5" />
-            Import en masse
-          </button>
+      {/* ── Zone d'ajout ─────────────────────────────────── */}
+      <div className="sheet overflow-hidden">
+        <div className="flex border-b border-ink/15">
+          <AddTab active={mode === "single"} onClick={() => setMode("single")} icon={List} label="Un proxy" folio="01" />
+          <AddTab active={mode === "bulk"} onClick={() => setMode("bulk")} icon={AlignJustify} label="Import en masse" folio="02" />
         </div>
 
-        <div className="p-4">
+        <div className="p-5">
           {mode === "single" ? (
-            /* ── Ajout simple ──────────────────────────────────── */
-            <form onSubmit={handleAddSingle} className="flex gap-2">
-              <div className="flex-1">
+            <form onSubmit={handleAddSingle} className="flex gap-2 flex-wrap sm:flex-nowrap">
+              <div className="flex-1 min-w-[240px]">
+                <label className="eyebrow block mb-1.5">URL</label>
                 <input
                   type="text"
                   placeholder="http://user:password@host:port"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-800 placeholder:text-slate-400 placeholder:font-sans focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                  className="w-full border-0 border-b border-ink/25 bg-transparent pb-2 pt-1 mono text-xs text-ink placeholder:text-ink-4 outline-none focus:border-ink transition-colors"
                 />
               </div>
-              <div className="w-36">
+              <div className="w-full sm:w-36">
+                <label className="eyebrow block mb-1.5">Label</label>
                 <input
                   type="text"
-                  placeholder="Label (optionnel)"
+                  placeholder="Optionnel"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
-                  className="w-full rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                  className="w-full border-0 border-b border-ink/25 bg-transparent pb-2 pt-1 text-xs text-ink placeholder:text-ink-4 outline-none focus:border-ink transition-colors"
                 />
               </div>
               <button
                 type="submit"
                 disabled={adding || !url.trim()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                className="btn-ink self-end disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Ajouter
               </button>
             </form>
           ) : (
-            /* ── Import en masse ───────────────────────────────── */
             <div className="space-y-3">
+              <label className="eyebrow block">Coller une liste — une ligne par proxy</label>
               <textarea
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
                 placeholder={"19.24.1.55:12345:monpassword\n1.2.3.4:8080:user:pass\nhttp://user:pass@5.6.7.8:1080\n9.10.11.12:3128\n..."}
                 rows={6}
-                className="w-full rounded-lg border border-gray-200 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700 placeholder:text-slate-400 placeholder:font-sans resize-y focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                className="w-full border border-ink/20 rounded-[3px] bg-paper px-3 py-2 mono text-xs text-ink-2 placeholder:text-ink-4 resize-y outline-none focus:border-ink transition-colors"
               />
 
-              {/* Preview en temps réel */}
               {bulkText.trim() && (
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="flex items-center gap-1 font-semibold text-emerald-700">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" />
-                    {bulkParsed.valid.length} valide{bulkParsed.valid.length > 1 ? "s" : ""}
+                <div className="flex items-center gap-4 text-xs pt-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-signal inline-block" />
+                    <span className="mono tabular-nums font-medium text-ink">{bulkParsed.valid.length}</span>
+                    <span className="text-ink-3">valide{bulkParsed.valid.length > 1 ? "s" : ""}</span>
                   </span>
                   {bulkParsed.invalid.length > 0 && (
-                    <span className="flex items-center gap-1 font-semibold text-red-600">
-                      <span className="h-1.5 w-1.5 rounded-full bg-red-400 inline-block" />
-                      {bulkParsed.invalid.length} invalide{bulkParsed.invalid.length > 1 ? "s" : ""} (ignoré{bulkParsed.invalid.length > 1 ? "s" : ""})
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rust inline-block" />
+                      <span className="mono tabular-nums font-medium text-rust">{bulkParsed.invalid.length}</span>
+                      <span className="text-ink-3">invalide{bulkParsed.invalid.length > 1 ? "s" : ""}</span>
                     </span>
                   )}
-                  <span className="text-gray-400">{bulkParsed.total} ligne{bulkParsed.total > 1 ? "s" : ""} au total</span>
+                  <span className="text-ink-4 mono text-[11px] ml-auto tabular-nums">
+                    {bulkParsed.total} ligne{bulkParsed.total > 1 ? "s" : ""}
+                  </span>
                 </div>
               )}
 
               <button
                 onClick={handleImportBulk}
                 disabled={importing || !bulkParsed.valid.length}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn-ink disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="h-3.5 w-3.5" />
                 {importing
@@ -336,30 +299,30 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
         </div>
       </div>
 
-      {/* ── Liste ─────────────────────────────────────────────── */}
+      {/* ── Liste ─────────────────────────────────────────── */}
       {proxies.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-white py-12 text-center">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-            <Globe className="h-5 w-5 text-gray-400" />
+        <div className="flex flex-col items-center justify-center border border-dashed border-ink/25 bg-paper-deep/30 py-14 text-center rounded-md">
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-paper-deep">
+            <Globe className="h-4 w-4 text-ink-3" />
           </div>
-          <p className="text-sm font-medium text-gray-600">Aucun proxy configuré</p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="font-serif text-lg text-ink italic">Aucun proxy configuré</p>
+          <p className="mt-1 text-xs text-ink-3">
             Sans proxy, les vérifications Google utilisent l&apos;IP du serveur.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-t border-b border-ink/20 overflow-hidden">
 
-          {/* Barre de sélection */}
           {selected.size > 0 && (
-            <div className="flex items-center justify-between border-b border-red-100 bg-red-50 px-4 py-2">
-              <span className="text-xs font-semibold text-red-700">
-                {selected.size} proxy{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}
+            <div className="flex items-center justify-between border-b border-rust/30 bg-rust-soft px-4 py-2.5">
+              <span className="text-xs text-rust flex items-baseline gap-1.5">
+                <span className="mono tabular-nums font-bold">{selected.size}</span>
+                <span>proxy{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}</span>
               </span>
               <button
                 onClick={handleDeleteSelected}
                 disabled={deleting}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-[3px] bg-rust px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-rust/90 disabled:opacity-50"
               >
                 <Trash2 className="h-3 w-3" />
                 {deleting ? "Suppression…" : `Supprimer (${selected.size})`}
@@ -369,89 +332,85 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
 
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                {/* Checkbox tout sélectionner */}
-                <th className="w-10 px-3 py-2.5">
-                  <button onClick={toggleSelectAll} className="flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+              <tr className="border-b border-ink/15">
+                <th className="w-10 px-3 py-3">
+                  <button onClick={toggleSelectAll} className="flex items-center justify-center text-ink-4 hover:text-ink transition-colors">
                     {allSelected
-                      ? <CheckSquare className="h-4 w-4 text-indigo-600" />
+                      ? <CheckSquare className="h-4 w-4 text-ink" />
                       : someSelected
-                        ? <MinusSquare className="h-4 w-4 text-indigo-400" />
+                        ? <MinusSquare className="h-4 w-4 text-ink-2" />
                         : <Square className="h-4 w-4" />
                     }
                   </button>
                 </th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-gray-400">Proxy</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-gray-400 w-24">Protocole</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-gray-400 w-24">Statut</th>
+                <Th>Proxy</Th>
+                <Th width="w-24">Protocole</Th>
+                <Th width="w-24">Statut</Th>
                 <th className="w-10" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {proxies.map((proxy) => {
+            <tbody>
+              {proxies.map((proxy, i) => {
                 const proto = proxyProtocol(proxy.url);
-                const protoCls = PROTOCOL_COLORS[proto] ?? PROTOCOL_COLORS.HTTP;
                 const isSelected = selected.has(proxy.id);
                 return (
                   <tr
                     key={proxy.id}
                     className={cn(
                       "group transition-colors",
-                      isSelected ? "bg-indigo-50/60" : "hover:bg-gray-50/60"
+                      i !== proxies.length - 1 && "border-b border-ink/10",
+                      isSelected ? "bg-paper-deep/60" : "hover:bg-paper-deep/40"
                     )}
                   >
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3.5">
                       <button
                         onClick={() => toggleSelect(proxy.id)}
-                        className="flex items-center justify-center text-gray-300 hover:text-indigo-500 transition-colors"
+                        className="flex items-center justify-center text-ink-4 hover:text-ink transition-colors"
                       >
                         {isSelected
-                          ? <CheckSquare className="h-4 w-4 text-indigo-600" />
+                          ? <CheckSquare className="h-4 w-4 text-ink" />
                           : <Square className="h-4 w-4" />
                         }
                       </button>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3.5">
                       <div className="space-y-0.5">
                         {proxy.label && (
-                          <p className="text-xs font-semibold text-gray-800">{proxy.label}</p>
+                          <p className="text-xs font-medium text-ink font-serif italic">{proxy.label}</p>
                         )}
-                        <p className="font-mono text-[11px] text-gray-500">
+                        <p className="mono text-[11px] text-ink-3">
                           {maskProxyUrl(proxy.url)}
                         </p>
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <span className={cn(
-                        "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset",
-                        protoCls
-                      )}>
+                    <td className="px-3 py-3.5">
+                      <span className="inline-flex items-center rounded-[2px] bg-paper-deep px-1.5 py-0.5 mono text-[10px] font-bold text-ink-2">
                         {proto}
                       </span>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3.5">
                       <button
                         onClick={() => handleToggle(proxy)}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
+                        className="inline-flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80"
                         title={proxy.isActive ? "Désactiver" : "Activer"}
                       >
                         {proxy.isActive ? (
                           <>
-                            <ToggleRight className="h-4 w-4 text-emerald-500" />
-                            <span className="text-emerald-700">Actif</span>
+                            <ToggleRight className="h-4 w-4 text-ink" />
+                            <span className="chip-signal rounded-[2px] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]">Actif</span>
                           </>
                         ) : (
                           <>
-                            <ToggleLeft className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-400">Inactif</span>
+                            <ToggleLeft className="h-4 w-4 text-ink-4" />
+                            <span className="text-ink-4 text-[10px] uppercase tracking-[0.08em]">Inactif</span>
                           </>
                         )}
                       </button>
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-3 py-3.5 text-right">
                       <button
                         onClick={() => handleDeleteOne(proxy.id)}
-                        className="opacity-0 group-hover:opacity-100 inline-flex h-6 w-6 items-center justify-center rounded-md text-gray-300 transition-all hover:bg-red-50 hover:text-red-500"
+                        className="opacity-0 group-hover:opacity-100 inline-flex h-7 w-7 items-center justify-center rounded-[3px] text-ink-4 transition-all hover:bg-rust-soft hover:text-rust"
                         title="Supprimer"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -465,5 +424,44 @@ export function ProxySettings({ initialProxies }: ProxySettingsProps) {
         </div>
       )}
     </div>
+  );
+}
+
+function AddTab({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+  folio,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ElementType;
+  label: string;
+  folio: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "group relative flex flex-1 items-center justify-center gap-2 px-4 py-3 text-xs transition-colors",
+        active ? "text-ink bg-paper" : "text-ink-3 bg-paper-deep/50 hover:text-ink"
+      )}
+    >
+      <span className={cn("mono text-[10px] tabular-nums", active ? "text-rust" : "text-ink-4")}>
+        {folio}
+      </span>
+      <Icon className="h-3.5 w-3.5" />
+      <span className="font-medium uppercase tracking-[0.1em]">{label}</span>
+      {active && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-ink" />}
+    </button>
+  );
+}
+
+function Th({ children, width }: { children: React.ReactNode; width?: string }) {
+  return (
+    <th className={cn("px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-3", width)}>
+      {children}
+    </th>
   );
 }
