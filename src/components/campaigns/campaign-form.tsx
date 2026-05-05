@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -229,13 +230,12 @@ function Field({
   );
 }
 
-const UnderlineInput = ({
-  error,
-  mono,
-  className,
-  ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { error?: boolean; mono?: boolean }) => (
+const UnderlineInput = forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement> & { error?: boolean; mono?: boolean }
+>(({ error, mono, className, ...props }, ref) => (
   <input
+    ref={ref}
     {...props}
     className={cn(
       "w-full border-0 border-b border-ink/25 bg-transparent pb-2 pt-1 text-sm text-ink outline-none transition-colors focus:border-ink placeholder:text-ink-4",
@@ -244,7 +244,8 @@ const UnderlineInput = ({
       className
     )}
   />
-);
+));
+UnderlineInput.displayName = "UnderlineInput";
 
 function SegmentedSelect({
   value,
